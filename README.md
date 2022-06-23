@@ -1,17 +1,27 @@
-## My Project
+# Search Relevance
 
-TODO: Fill this README out!
+## Overview
+In a search engine, the relevance is the measure of the relationship accuracy between the search query and the search result. The higher the relevance is, the higher quality of the search result and the users are able to get more relevant content from the search result. This project aims to add plugins to OpenSearch to help users make their query results more accurate, contextual and relevant.
 
-Be sure to:
 
-* Change the title in this README
-* Edit your repository description on GitHub
+## Contributing
+
+See [developer guide](DEVELOPER_GUIDE.md) and [how to contribute to this project](CONTRIBUTING.md).
+
+## Getting Help
+
+If you find a bug, or have a feature request, please don't hesitate to open an issue in this repository.
+
+For more information, see [project website](https://opensearch.org/) and [documentation](https://opensearch.org/docs). If you need help and are unsure where to open an issue, try [forums](https://forum.opensearch.org/).
 
 ## Security
 
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+If you discover a potential security issue in this project we ask that you notify AWS/Amazon Security via our [vulnerability reporting page](http://aws.amazon.com/security/vulnerability-reporting/). Please do **not** create a public GitHub issue.
 
 ## License
 
-This project is licensed under the Apache-2.0 License.
+This project is licensed under the [Apache v2.0 License](LICENSE).
 
+## Copyright
+
+Copyright OpenSearch Contributors. See [NOTICE](NOTICE) for details.
