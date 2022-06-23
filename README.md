@@ -6,7 +6,7 @@ In a search engine, the relevance is the measure of the relationship accuracy be
 
 ## Contributing
 
-See [developer guide](DEVELOPER_GUIDE.md) and [how to contribute to this project](CONTRIBUTING.md).
+See [developer guide](https://github.com/opensearch-project/opensearch-plugins/blob/main/BUILDING.md#developing-new-plugins-for-opensearch) and [how to contribute to this project](CONTRIBUTING.md).
 
 ## Getting Help
 
