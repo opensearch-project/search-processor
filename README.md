@@ -1,8 +1,9 @@
 # Search Relevance
 
 ## Overview
-In a search engine, the relevance is the measure of the relationship accuracy between the search query and the search result. The higher the relevance is, the higher quality of the search result and the users are able to get more relevant content from the search result. This project aims to add plugins to OpenSearch to help users make their query results more accurate, contextual and relevant.
+In a search engine, the relevance is the measure of the relationship accuracy between the search query and the search result. Higher the relevance is, the higher is the quality of search result and the users are able to get more relevant content. This project aims to add plugins to OpenSearch to help users make their query results more accurate, contextual and relevant.
 
+### [RFC Search Relevance](https://github.com/opensearch-project/search-relevance/issues/1)
 
 ## Contributing
 
