@@ -22,11 +22,11 @@ import static org.hamcrest.Matchers.containsString;
 
 @ThreadLeakScope(ThreadLeakScope.Scope.NONE)
 @OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE)
-public class SearchRelevancePluginIT extends OpenSearchIntegTestCase {
+public class SemanticRerankerPluginIT extends OpenSearchIntegTestCase {
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return Collections.singletonList(SearchRelevancePlugin.class);
+        return Collections.singletonList(SemanticRerankerPlugin.class);
     }
 
     public void testPluginInstalled() throws IOException {
@@ -34,6 +34,6 @@ public class SearchRelevancePluginIT extends OpenSearchIntegTestCase {
         String body = EntityUtils.toString(response.getEntity());
 
         logger.info("response body: {}", body);
-        assertThat(body, containsString("search-relevance"));
+        assertThat(body, containsString("semantic-reranker"));
     }
 }

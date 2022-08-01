@@ -8,30 +8,30 @@ apply plugin: 'opensearch.pluginzip'
 
 group = 'org.opensearch'
 
-def pluginName = 'search-relevance'
+def pluginName = 'semantic-reranker'
 def pluginDescription = 'Make Opensearch results more relevant.'
 def projectPath = 'org.opensearch'
 def pathToPlugin = 'search.relevance'
-def pluginClassName = 'SearchRelevancePlugin'
+def pluginClassName = 'SemanticRerankerPlugin'
 
 publishing {
     publications {
         pluginZip(MavenPublication) { publication ->
             pom {
-              name = pluginName
-              description = pluginDescription
-              licenses {
-                license {
-                  name = "The Apache License, Version 2.0"
-                  url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                name = pluginName
+                description = pluginDescription
+                licenses {
+                    license {
+                        name = "The Apache License, Version 2.0"
+                        url = "http://www.apache.org/licenses/LICENSE-2.0.txt"
+                    }
                 }
-              }
-              developers {
-                developer {
-                  name = "OpenSearch"
-                  url = "https://github.com/opensearch-project/search-relevance"
+                developers {
+                    developer {
+                        name = "OpenSearch"
+                        url = "https://github.com/opensearch-project/search-relevance"
+                    }
                 }
-              }
             }
         }
     }

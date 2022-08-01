@@ -10,6 +10,6 @@ package org.opensearch.search.relevance;
 import org.opensearch.plugins.Plugin;
 
 
-public class SearchRelevancePlugin extends Plugin {
+public class SemanticRerankerPlugin extends Plugin {
     // Implement the relevant Plugin Interfaces here
 }

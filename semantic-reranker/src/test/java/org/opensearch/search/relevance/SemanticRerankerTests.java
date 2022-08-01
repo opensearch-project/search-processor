@@ -9,6 +9,6 @@ package org.opensearch.search.relevance;
 
 import org.opensearch.test.OpenSearchTestCase;
 
-public class SearchRelevanceTests extends OpenSearchTestCase {
+public class SemanticRerankerTests extends OpenSearchTestCase {
     // Add unit tests for your plugin
 }

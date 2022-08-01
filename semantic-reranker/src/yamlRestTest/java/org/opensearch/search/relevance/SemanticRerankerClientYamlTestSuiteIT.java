@@ -13,9 +13,9 @@ import org.opensearch.test.rest.yaml.ClientYamlTestCandidate;
 import org.opensearch.test.rest.yaml.OpenSearchClientYamlSuiteTestCase;
 
 
-public class SearchRelevanceClientYamlTestSuiteIT extends OpenSearchClientYamlSuiteTestCase {
+public class SemanticRerankerClientYamlTestSuiteIT extends OpenSearchClientYamlSuiteTestCase {
 
-    public SearchRelevanceClientYamlTestSuiteIT(@Name("yaml") ClientYamlTestCandidate testCandidate) {
+    public SemanticRerankerClientYamlTestSuiteIT(@Name("yaml") ClientYamlTestCandidate testCandidate) {
         super(testCandidate);
     }
 
