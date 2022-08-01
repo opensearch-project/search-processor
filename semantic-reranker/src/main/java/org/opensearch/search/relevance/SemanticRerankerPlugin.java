@@ -7,9 +7,18 @@
  */
 package org.opensearch.search.relevance;
 
+import org.opensearch.action.support.ActionFilter;
+import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.Plugin;
+import org.opensearch.search.relevance.actionfilter.SearchActionFilter;
 
+import java.util.Arrays;
+import java.util.List;
 
-public class SemanticRerankerPlugin extends Plugin {
-    // Implement the relevant Plugin Interfaces here
+public class SemanticRerankerPlugin extends Plugin implements ActionPlugin {
+
+  @Override
+  public List<ActionFilter> getActionFilters() {
+    return Arrays.asList(new SearchActionFilter());
+  }
 }
