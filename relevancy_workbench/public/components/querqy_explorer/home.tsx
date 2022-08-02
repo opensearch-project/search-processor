@@ -21,9 +21,10 @@ import { FormattedMessage } from 'react-intl';
 import { NavigationPublicPluginStart } from 'src/plugins/navigation/public';
 import DSLService from '../../services/dsl';
 import { RelevancySideBar } from '../common_utils/side_nav';
-import { PLUGIN_EXPLORER_URL, PLUGIN_EXPLORER_NAME } from '../../../common';
+import { PLUGIN_EXPLORER_URL, PLUGIN_EXPLORER_NAME, gridObjectType } from '../../../common';
 import '../../ace-themes/sql_console';
 import { ConfigureFlyout } from './configure_flyout';
+import { ExplorerGrid } from './explorer_grid/explorer_grid';
 
 interface QueryExplorerProps {
   parentBreadCrumbs: ChromeBreadcrumb[];
@@ -33,6 +34,7 @@ interface QueryExplorerProps {
   setBreadcrumbs: (newBreadcrumbs: ChromeBreadcrumb[]) => void;
   dslService: DSLService;
   setToast: (title: string, color?: string, text?: any, side?: string) => void;
+  chrome: CoreStart['chrome'];
 }
 
 export const Home = ({
@@ -43,25 +45,34 @@ export const Home = ({
   setBreadcrumbs,
   dslService,
   setToast,
+  chrome,
 }: QueryExplorerProps) => {
   // Use React hooks to manage state.
-  const [querqyResult, setQuerqyResult] = useState('');
-  const [queryString, setQueryString] = useState('');
-  const [indexValue, setIndexValue] = useState('');
+  const [querqyResult, setQuerqyResult] = useState({});
+  const [queryString, setQueryString] = useState(
+    JSON.stringify({
+      query: {
+        term: { title: '%searchToken%' },
+      },
+    })
+  );
+  const [indexValue, setIndexValue] = useState('chorus-ecommerce-data');
   const [isLoading, setIsLoading] = useState(false);
   const [isFlyoutVisible, setIsFlyoutVisible] = useState(false);
-  const [searchToken, setSearchToken] = useState('iphone');
+  // const [searchToken, setSearchToken] = useState('');
   const [toggleIdSelected, setToggleIdSelected] = useState('edit-mode-btn');
   const [isEditMode, setIsEditMode] = useState(true);
+  const [gridObjects, setGridObjects] = useState<gridObjectType[]>([]);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setIndexValue(e.target.value);
   };
 
-  const onClickHandler = () => {
+  const onClickHandler = (searchToken: string) => {
     setIsLoading(true);
     let jsonQuery;
     try {
+      console.log('queryString', queryString);
       if (queryString === '' || searchToken === '') setToast('Query/Search token cannot be empty');
       else {
         jsonQuery = JSON.parse(queryString.replace(/%searchToken%/g, searchToken));
@@ -118,6 +129,7 @@ export const Home = ({
         queryResult={querqyResult}
         closeFlyout={closeFlyout}
         setToast={setToast}
+        // setSearchToken={setSearchToken}
       />
     );
   }
@@ -134,12 +146,25 @@ export const Home = ({
   ];
 
   useEffect(() => {
+    setQuerqyResult({});
+  }, [isFlyoutVisible]);
+
+  useEffect(() => {
+    console.log('query result changed in home');
+  }, [querqyResult]);
+
+  useEffect(() => {
     setBreadcrumbs([
       ...parentBreadCrumbs,
       {
         text: `${PLUGIN_EXPLORER_NAME}`,
         href: `#${PLUGIN_EXPLORER_URL}`,
       },
+    ]);
+
+    setGridObjects([
+      { id: '0', objectType: 'searchBar', x: 0, y: 0, w: 1, h: 1 },
+      { id: '2', objectType: 'resultGrid', x: 0, y: 5, w: 5, h: 5 },
     ]);
   }, []);
 
@@ -176,7 +201,17 @@ export const Home = ({
               </EuiFlexItem>
             </EuiFlexGroup>
           </EuiPageHeader>
-          <EuiPageContentBody></EuiPageContentBody>
+          <EuiPageContentBody>
+            <ExplorerGrid
+              chrome={chrome}
+              gridObjects={gridObjects}
+              editMode={toggleIdSelected === `edit-mode-btn`}
+              // searchToken={searchToken}
+              // setSearchToken={setSearchToken}
+              onClickHandler={onClickHandler}
+              querqyResult={querqyResult}
+            />
+          </EuiPageContentBody>
         </EuiPageBody>
       </EuiPage>
       {flyout}

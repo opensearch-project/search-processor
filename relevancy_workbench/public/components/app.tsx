@@ -76,6 +76,7 @@ export const RelevancyWorkbenchApp = ({
                     setBreadcrumbs={chrome.setBreadcrumbs}
                     dslService={dslService}
                     setToast={setToast}
+                    chrome={chrome}
                   />
                 );
               }}

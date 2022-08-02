@@ -60,3 +60,16 @@ export interface PARSED_COMMON_RULES_TYPE {
     deleteInput: string;
   }[];
 }
+
+export interface gridObjectType {
+  id: string;
+  objectType: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface IDocType {
+  [key: string]: string;
+}

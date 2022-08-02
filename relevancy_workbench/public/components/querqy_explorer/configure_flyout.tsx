@@ -13,8 +13,7 @@ import {
   EuiFlyoutFooter,
   EuiFieldSearch,
 } from '@elastic/eui';
-import { truncate } from 'fs';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FormattedMessage } from 'react-intl';
 import { FlyoutContainers } from '../common_utils/flyoutContainers';
 
@@ -23,13 +22,14 @@ interface ConfigureFlyoutProps {
   onChange: (e) => void;
   queryString: string;
   setQueryString: React.Dispatch<React.SetStateAction<string>>;
-  onClickHandler: () => void;
+  onClickHandler: (value: string) => void;
   isLoading: boolean;
   setIndexValue: React.Dispatch<React.SetStateAction<string>>;
-  setQuerqyResult: React.Dispatch<React.SetStateAction<string>>;
-  queryResult: string;
+  setQuerqyResult: React.Dispatch<React.SetStateAction<{}>>;
+  queryResult: any;
   closeFlyout: () => void;
   setToast: (title: string, color?: string, text?: any, side?: string) => void;
+  // setSearchToken: React.Dispatch<React.SetStateAction<string>>;
 }
 
 export const ConfigureFlyout = ({
@@ -44,7 +44,8 @@ export const ConfigureFlyout = ({
   queryResult,
   closeFlyout,
   setToast,
-}: ConfigureFlyoutProps) => {
+}: // setSearchToken,
+ConfigureFlyoutProps) => {
   const [previewValue, setPreviewValue] = useState('');
 
   const onChangePreview = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -53,7 +54,7 @@ export const ConfigureFlyout = ({
 
   const onClickPreview = () => {
     if (previewValue === '') setToast('Search token cannot be empty', 'danger', undefined, 'right');
-    else onClickHandler();
+    else onClickHandler(previewValue);
   };
   const flyoutHeader = (
     <EuiFlyoutHeader hasBorder>
@@ -149,6 +150,11 @@ export const ConfigureFlyout = ({
       </EuiCodeBlock>
     </EuiPanel>
   );
+
+  // useEffect(() => {
+  //   setSearchToken(previewValue);
+  // }, [previewValue]);
+
   return (
     <FlyoutContainers
       closeFlyout={closeFlyout}
