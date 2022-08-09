@@ -60,8 +60,8 @@ export const Home = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isFlyoutVisible, setIsFlyoutVisible] = useState(false);
   // const [searchToken, setSearchToken] = useState('');
-  const [toggleIdSelected, setToggleIdSelected] = useState('edit-mode-btn');
-  const [isEditMode, setIsEditMode] = useState(true);
+  const [toggleIdSelected, setToggleIdSelected] = useState('view-mode-btn');
+  const [isEditMode, setIsEditMode] = useState(false);
   const [gridObjects, setGridObjects] = useState<gridObjectType[]>([]);
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -163,8 +163,8 @@ export const Home = ({
     ]);
 
     setGridObjects([
-      { id: '0', objectType: 'searchBar', x: 0, y: 0, w: 1, h: 1 },
-      { id: '2', objectType: 'resultGrid', x: 0, y: 5, w: 5, h: 5 },
+      { id: '0', objectType: 'searchBar', x: 3, y: 0, w: 5, h: 1 },
+      { id: '1', objectType: 'resultGrid', x: 1, y: 1, w: 9, h: 1 },
     ]);
   }, []);
 
@@ -205,9 +205,7 @@ export const Home = ({
             <ExplorerGrid
               chrome={chrome}
               gridObjects={gridObjects}
-              editMode={toggleIdSelected === `edit-mode-btn`}
-              // searchToken={searchToken}
-              // setSearchToken={setSearchToken}
+              editMode={isEditMode}
               onClickHandler={onClickHandler}
               querqyResult={querqyResult}
             />

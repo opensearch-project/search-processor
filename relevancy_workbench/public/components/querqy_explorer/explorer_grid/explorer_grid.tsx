@@ -4,8 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { Layout, Layouts, Responsive, WidthProvider } from 'react-grid-layout';
 import { gridObjectType } from '../../../../common';
 import { useObservable } from 'react-use';
-import { EuiFieldSearch } from '@elastic/eui';
 import { GridObjectContainer } from '../grid_object_container/grid_object_container';
+import _ from 'lodash';
 
 // HOC container to provide dynamic width for Grid layout
 const ResponsiveGridLayout = WidthProvider(Responsive);
@@ -14,8 +14,6 @@ interface ExplorerGirdProps {
   chrome: CoreStart['chrome'];
   gridObjects: gridObjectType[];
   editMode: boolean;
-  // searchToken: string;
-  // setSearchToken: React.Dispatch<React.SetStateAction<string>>;
   onClickHandler: (value: string) => void;
   querqyResult: any;
 }
@@ -24,8 +22,6 @@ export const ExplorerGrid = ({
   chrome,
   gridObjects,
   editMode,
-  // searchToken,
-  // setSearchToken,
   onClickHandler,
   querqyResult,
 }: ExplorerGirdProps) => {
@@ -37,6 +33,7 @@ export const ExplorerGrid = ({
   // Reset Size of Visualizations when layout is changed
   const layoutChanged = (currLayouts: Layout[], allLayouts: Layouts) => {
     window.dispatchEvent(new Event('resize'));
+    console.log('here checking things!!', currLayouts);
     setPostEditLayout(currLayouts);
   };
 
@@ -45,8 +42,6 @@ export const ExplorerGrid = ({
       <>
         <GridObjectContainer
           objectType={gridObject.objectType}
-          // searchToken={searchToken}
-          // setSearchToken={setSearchToken}
           onClickHandler={onClickHandler}
           querqyResult={querqyResult}
         />
@@ -57,21 +52,10 @@ export const ExplorerGrid = ({
 
   // Reload the Layout
   const reloadLayout = () => {
-    // const tempLayout: Layout[] = gridObjects.map((gridObject) => {
-    //   return {
-    //     i: gridObject.id,
-    //     x: gridObject.x,
-    //     y: gridObject.y,
-    //     w: gridObject.w,
-    //     h: gridObject.h,
-    //     static: !editMode,
-    //   } as Layout;
-    // });
-    // console.log('reload called', tempLayout);
-    // setCurrentLayout(tempLayout);
-    const tempLayout: Layout[] = postEditLayout.map((gridObject) => {
+    const mapObjects = _.isEmpty(postEditLayout) ? gridObjects : postEditLayout;
+    const tempLayout: Layout[] = mapObjects.map((gridObject) => {
       return {
-        i: gridObject.i,
+        i: _.isEmpty(postEditLayout) ? gridObject.id : gridObject.i,
         x: gridObject.x,
         y: gridObject.y,
         w: gridObject.w,
@@ -91,6 +75,7 @@ export const ExplorerGrid = ({
 
   // Update layout whenever visualizations are updated
   useEffect(() => {
+    console.log('init layout in usegrid', gridObjects);
     reloadLayout();
     loadGridObjects();
   }, [gridObjects, editMode]);
@@ -102,19 +87,6 @@ export const ExplorerGrid = ({
   useEffect(() => {
     loadGridObjects();
   }, []);
-
-  // // Update layout whenever user edit gets completed
-  // useEffect(() => {
-  //   if (editMode) {
-  //     console.log('in edit mode');
-  //     reloadLayout();
-  //     loadGridObjects();
-  //   }
-  // }, [editMode]);
-
-  useEffect(() => {
-    console.log('query result changed in explorer grid');
-  }, [querqyResult]);
 
   return (
     <>

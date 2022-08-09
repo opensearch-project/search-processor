@@ -1,4 +1,5 @@
-import { EuiLink, EuiPanel, EuiText } from '@elastic/eui';
+import './result_grid.scss';
+import { EuiButtonIcon, EuiLink, EuiPanel, EuiText } from '@elastic/eui';
 import _, { uniqueId } from 'lodash';
 import { IDocType } from '../../../../common';
 import React, { useEffect } from 'react';
@@ -9,6 +10,20 @@ interface ResultGridComponentProps {
 }
 export const ResultGridComponent = ({ querqyResult }: ResultGridComponentProps) => {
   const [resultGrid, setResultGrid] = useState(<></>);
+
+  // const getExpColapTd = () => {
+  //   return (
+  //     <td className="osdDocTableCell__toggleDetails" key={uniqueId('grid-td-')}>
+  //       <EuiButtonIcon
+  //         className="euiButtonIcon euiButtonIcon--text"
+  //         onClick={() => {
+  //           toggleDetailOpen();
+  //         }}
+  //         iconType={detailsOpen || surroundingEventsOpen ? 'arrowLeft' : 'arrowRight'}
+  //       />
+  //     </td>
+  //   );
+  // };
 
   const getDlTmpl = (doc: IDocType) => {
     return (
@@ -65,12 +80,9 @@ export const ResultGridComponent = ({ querqyResult }: ResultGridComponentProps) 
       setResultGrid(
         querqyResult.hits.hits.map((doc: any, id: number) => {
           return (
-            <EuiPanel paddingSize="l" style={{ marginTop: '10px' }}>
-              <EuiText>{getDlTmpl(doc._source)}</EuiText>
-            </EuiPanel>
-            // <>
-            //   <tr className="osdDocTable__row">{getTds(doc._source)}</tr>
-            // </>
+            <>
+              <tr className="osdDocTable__row">{getTds(doc._source)}</tr>
+            </>
           );
         })
       );
@@ -78,14 +90,14 @@ export const ResultGridComponent = ({ querqyResult }: ResultGridComponentProps) 
 
   return (
     <EuiPanel>
-      {resultGrid}
-      {/* <table>{resultGrid}</table> */}
-      {/* <div className="dscTable dscTableFixedScroll">
+      <div className="dscTable dscTableFixedScroll">
         <table className="osd-table table" data-test-subj="docTable">
-          <thead>_source</thead>
+          <thead>
+            <th key={uniqueId('datagrid-header-')}>_source</th>
+          </thead>
           <tbody>{resultGrid}</tbody>
         </table>
-      </div> */}
+      </div>
     </EuiPanel>
   );
 };
