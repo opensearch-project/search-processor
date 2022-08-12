@@ -5,7 +5,7 @@
  * this file be licensed under the Apache-2.0 license or a
  * compatible open source license.
  */
-package org.opensearch.search.relevance.utils;
+package org.opensearch.search.relevance.preprocess;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -39,8 +39,7 @@ public class BM25Scorer {
 
       Set<String> uniqueWordsInDocument = new HashSet<>(document); // add to set to remove duplicates
       for (String term : uniqueWordsInDocument) {
-        String lowerCased = term.toLowerCase(Locale.ENGLISH);
-        wordToDocumentCount.put(lowerCased, wordToDocumentCount.getOrDefault(lowerCased, 0) + 1);
+        wordToDocumentCount.put(term, wordToDocumentCount.getOrDefault(term, 0) + 1);
       }
     }
     this.averageDocumentLength = totalDocumentLength / documents.size();
@@ -58,8 +57,7 @@ public class BM25Scorer {
 
     Map<String, Integer> documentWordCounts = new HashMap<>();
     for (String word : document) {
-      String lowerCased = word.toLowerCase(Locale.ENGLISH);
-      documentWordCounts.put(lowerCased, documentWordCounts.getOrDefault(lowerCased, 0) + 1);
+      documentWordCounts.put(word, documentWordCounts.getOrDefault(word, 0) + 1);
     }
 
     for (String queryWord : query) {

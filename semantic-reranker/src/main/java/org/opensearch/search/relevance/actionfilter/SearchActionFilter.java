@@ -11,7 +11,6 @@ import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.ActionRequest;
 import org.opensearch.action.ActionResponse;
-import org.opensearch.action.admin.indices.analyze.AnalyzeAction.Response;
 import org.opensearch.action.search.SearchAction;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.action.search.SearchResponse;
@@ -23,18 +22,24 @@ import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.opensearch.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.index.query.MatchQueryBuilder;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
 import org.opensearch.search.internal.InternalSearchResponse;
 import org.opensearch.search.profile.SearchProfileShardResults;
 import org.opensearch.search.relevance.preprocess.SlidingWindowTextSplitter;
+import org.opensearch.search.relevance.preprocess.BM25Scorer;
+import org.opensearch.search.relevance.preprocess.TextTokenizer;
 import org.opensearch.search.suggest.Suggest;
 import org.opensearch.tasks.Task;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.PriorityQueue;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -45,7 +50,10 @@ public class SearchActionFilter implements ActionFilter {
 
   // TODO: Finalize passage length and sliding window step
   private static final int PASSAGE_SIZE_LIMIT = 600;
-  static final int SLIDING_WINDOW_STEP = PASSAGE_SIZE_LIMIT - 50;
+  private static final int SLIDING_WINDOW_STEP = PASSAGE_SIZE_LIMIT - 50;
+  private static final double BM25_B_VALUE = 0.75;
+  private static final double BM25_K1_VALUE = 1.6;
+  private static final int TOP_K_PASSAGES = 3;
 
   // TODO: Update log levels where required
   private static final Logger LOGGER = LogManager.getLogger(SearchActionFilter.class);
@@ -54,11 +62,13 @@ public class SearchActionFilter implements ActionFilter {
 
   private final NamedWriteableRegistry namedWriteableRegistry;
   private final SlidingWindowTextSplitter slidingWindowTextSplitter;
+  private final TextTokenizer textTokenizer;
 
   public SearchActionFilter() {
     order = 10; // TODO: Finalize this value
     namedWriteableRegistry = new NamedWriteableRegistry(Collections.emptyList());
     slidingWindowTextSplitter = new SlidingWindowTextSplitter(PASSAGE_SIZE_LIMIT, SLIDING_WINDOW_STEP);
+    textTokenizer = new TextTokenizer();
   }
 
   @Override
@@ -84,9 +94,11 @@ public class SearchActionFilter implements ActionFilter {
 
     final SearchRequest searchRequest = (SearchRequest) request;
     LOGGER.info("Applying action filter on search request: " + searchRequest);
+    MatchQueryBuilder matchQueryBuilder = (MatchQueryBuilder) searchRequest.source().query();
+    final String queryText = matchQueryBuilder.value().toString();
 
     final ActionListener<Response> searchResponseListener = shouldDoSemanticRerank(searchRequest) ?
-        createSearchResponseListener(listener, startTime) : listener;
+        createSearchResponseListener(listener, startTime, queryText) : listener;
     chain.proceed(task, action, request, searchResponseListener);
   }
 
@@ -113,7 +125,7 @@ public class SearchActionFilter implements ActionFilter {
   }
 
   private <Response extends ActionResponse> ActionListener<Response> createSearchResponseListener(
-      final ActionListener<Response> listener, final long startTime) {
+      final ActionListener<Response> listener, final long startTime, final String queryText) {
     return new ActionListener<Response>() {
 
       @Override
@@ -136,7 +148,7 @@ public class SearchActionFilter implements ActionFilter {
 
           LOGGER.info("Extracting search hits");
           final SearchHits hits = new SearchHits(in);
-          final SearchHits newHits = doSemanticRerank(hits);
+          final SearchHits newHits = doSemanticRerank(queryText, hits);
 
           LOGGER.info("Extracting remaining response fields");
           final InternalAggregations aggregations = in.readBoolean() ? InternalAggregations.readFrom(in) : null;
@@ -189,7 +201,7 @@ public class SearchActionFilter implements ActionFilter {
     };
   }
 
-  private SearchHits doSemanticRerank(final SearchHits hits) {
+  private SearchHits doSemanticRerank(final String queryText, final SearchHits hits) {
     LOGGER.info("Beginning semantic reranking of {} search hits", hits.getTotalHits());
     for (SearchHit searchHit: hits.getHits()) {
       // TODO: Refactor to separate out preprocessing
@@ -198,10 +210,44 @@ public class SearchActionFilter implements ActionFilter {
       LOGGER.info("Splitting document source into passages");
       List<String> splitPassages = slidingWindowTextSplitter.split(docSourceMap.get("text").toString());
       LOGGER.info("Split document source into {} passages: {}", splitPassages.size(), splitPassages);
+      List<String> topPassages = getTopPassages(queryText, splitPassages);
+      LOGGER.info("Top passages {}", topPassages);
     }
 
-    // TODO: Implement rescoring and reordering of hits
+    // TODO: Implement call to external service for reordering hits
     return new SearchHits(hits.getHits(), hits.getTotalHits(), hits.getMaxScore());
   }
 
+  private List<String> getTopPassages(final String queryText, final List<String> splitPassages) {
+    List<String> query = textTokenizer.tokenize(queryText);
+    List<List<String>> passages = textTokenizer.tokenize(splitPassages);
+    BM25Scorer bm25Scorer = new BM25Scorer(BM25_B_VALUE, BM25_K1_VALUE, passages);
+    PriorityQueue<PassageScore> pq = new PriorityQueue<>(Comparator.comparingDouble(x -> x.score));
+
+    for (int i = 0; i < passages.size(); i++) {
+      double score = bm25Scorer.score(query, passages.get(i));
+      LOGGER.info("Passage {} has score {}", passages.get(i), score);
+      pq.offer(new PassageScore(score, i));
+      if (pq.size() > TOP_K_PASSAGES) {
+        // Maintain heap of top K passages
+        pq.poll();
+      }
+    }
+
+    List<String> topPassages = new ArrayList<>();
+    while (!pq.isEmpty()) {
+      topPassages.add(splitPassages.get(pq.poll().index));
+    }
+    return topPassages;
+  }
+
+  public class PassageScore {
+    private double score;
+    private int index;
+
+    public PassageScore(double score, int index) {
+      this.score = score;
+      this.index = index;
+    }
+  }
 }
