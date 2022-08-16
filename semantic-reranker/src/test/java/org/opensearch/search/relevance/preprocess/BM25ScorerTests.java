@@ -31,7 +31,7 @@ public class BM25ScorerTests extends OpenSearchTestCase {
 
     BM25Scorer bm25Scorer = new BM25Scorer(0.75, 1.6, Arrays.asList(document1, document2, document3));
 
-    List<String> query1 = Arrays.asList("Apache Lucene search library".split(" "));
+    List<String> query1 = textTokenizer.tokenize("Apache Lucene search library");
     double doc1Score1 = bm25Scorer.score(query1, document1);
     double doc2Score1 = bm25Scorer.score(query1, document2);
     double doc3Score1 = bm25Scorer.score(query1, document3);
@@ -39,7 +39,7 @@ public class BM25ScorerTests extends OpenSearchTestCase {
     Assert.assertTrue(doc2Score1 > doc3Score1);
     Assert.assertEquals(0, doc3Score1, 0);
 
-    List<String> query2 = Arrays.asList("sky color".split(" "));
+    List<String> query2 = textTokenizer.tokenize("sky color");
     double doc1Score2 = bm25Scorer.score(query2, document1);
     double doc2Score2 = bm25Scorer.score(query2, document2);
     double doc3Score2 = bm25Scorer.score(query2, document3);

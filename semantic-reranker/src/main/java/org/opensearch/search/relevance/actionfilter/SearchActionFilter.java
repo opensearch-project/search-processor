@@ -7,6 +7,29 @@
  */
 package org.opensearch.search.relevance.actionfilter;
 
+import static org.opensearch.action.search.ShardSearchFailure.readShardSearchFailure;
+
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.opensearch.OpenSearchException;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.ActionRequest;
@@ -28,32 +51,27 @@ import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
 import org.opensearch.search.internal.InternalSearchResponse;
 import org.opensearch.search.profile.SearchProfileShardResults;
-import org.opensearch.search.relevance.preprocess.SlidingWindowTextSplitter;
+import org.opensearch.search.relevance.model.PassageScore;
+import org.opensearch.search.relevance.model.dto.OriginalHit;
+import org.opensearch.search.relevance.model.dto.RerankRequest;
+import org.opensearch.search.relevance.model.dto.RerankResponse;
+import org.opensearch.search.relevance.model.dto.RerankedHit;
 import org.opensearch.search.relevance.preprocess.BM25Scorer;
+import org.opensearch.search.relevance.preprocess.SlidingWindowTextSplitter;
 import org.opensearch.search.relevance.preprocess.TextTokenizer;
 import org.opensearch.search.suggest.Suggest;
 import org.opensearch.tasks.Task;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import static org.opensearch.action.search.ShardSearchFailure.readShardSearchFailure;
-
 public class SearchActionFilter implements ActionFilter {
 
   // TODO: Finalize passage length and sliding window step
+  // TODO: Move configs to external config file.
   private static final int PASSAGE_SIZE_LIMIT = 600;
   private static final int SLIDING_WINDOW_STEP = PASSAGE_SIZE_LIMIT - 50;
   private static final double BM25_B_VALUE = 0.75;
   private static final double BM25_K1_VALUE = 1.6;
   private static final int TOP_K_PASSAGES = 3;
+  private static final String EXTERNAL_SERVICE_ENDPOINT = "https://8f56a049-4208-4581-928e-6ffda506bf5a.mock.pstmn.io/rerank"; // mock service
 
   // TODO: Update log levels where required
   private static final Logger LOGGER = LogManager.getLogger(SearchActionFilter.class);
@@ -63,12 +81,17 @@ public class SearchActionFilter implements ActionFilter {
   private final NamedWriteableRegistry namedWriteableRegistry;
   private final SlidingWindowTextSplitter slidingWindowTextSplitter;
   private final TextTokenizer textTokenizer;
+  private final ObjectMapper objectMapper;
+
+  private final CloseableHttpClient httpClient;
 
   public SearchActionFilter() {
     order = 10; // TODO: Finalize this value
     namedWriteableRegistry = new NamedWriteableRegistry(Collections.emptyList());
     slidingWindowTextSplitter = new SlidingWindowTextSplitter(PASSAGE_SIZE_LIMIT, SLIDING_WINDOW_STEP);
     textTokenizer = new TextTokenizer();
+    objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    httpClient = HttpClientBuilder.create().build();
   }
 
   @Override
@@ -203,6 +226,7 @@ public class SearchActionFilter implements ActionFilter {
 
   private SearchHits doSemanticRerank(final String queryText, final SearchHits hits) {
     LOGGER.info("Beginning semantic reranking of {} search hits", hits.getTotalHits());
+    List<OriginalHit> originalHits = new ArrayList<>();
     for (SearchHit searchHit: hits.getHits()) {
       // TODO: Refactor to separate out preprocessing
       Map<String, Object> docSourceMap = searchHit.getSourceAsMap();
@@ -212,21 +236,45 @@ public class SearchActionFilter implements ActionFilter {
       LOGGER.info("Split document source into {} passages: {}", splitPassages.size(), splitPassages);
       List<String> topPassages = getTopPassages(queryText, splitPassages);
       LOGGER.info("Top passages {}", topPassages);
+      originalHits.add(new OriginalHit(searchHit.getId(), searchHit.getScore(), topPassages));
     }
 
-    // TODO: Implement call to external service for reordering hits
-    return new SearchHits(hits.getHits(), hits.getTotalHits(), hits.getMaxScore());
+    final RerankRequest rerankRequest = new RerankRequest(queryText, originalHits);
+    final RerankResponse rerankResponse = callExternalServiceRerank(rerankRequest);
+    if (rerankResponse != null) {
+      Map<String, SearchHit> idToSearchHitMap = new HashMap<>();
+      for (SearchHit searchHit : hits.getHits()) {
+        idToSearchHitMap.put(searchHit.getId(), searchHit);
+      }
+      List<SearchHit> newSearchHits = new ArrayList<>();
+      float maxScore = 0;
+      for (RerankedHit rerankedHit : rerankResponse.getHits()) {
+        SearchHit searchHit = idToSearchHitMap.get(rerankedHit.getId());
+        if (searchHit == null) {
+          LOGGER.warn("Response from external service references hit id {}, which does not exist in original results. Skipping.",
+              rerankedHit.getId());
+          continue;
+        }
+        searchHit.score(rerankedHit.getScore());
+        maxScore = Math.max(maxScore, rerankedHit.getScore());
+        newSearchHits.add(searchHit);
+      }
+      return new SearchHits(newSearchHits.toArray(new SearchHit[newSearchHits.size()]), hits.getTotalHits(), maxScore);
+    } else {
+      LOGGER.warn("Failed to get response from external service. Returning original search results without re-ranking.");
+      return new SearchHits(hits.getHits(), hits.getTotalHits(), hits.getMaxScore());
+    }
   }
 
   private List<String> getTopPassages(final String queryText, final List<String> splitPassages) {
     List<String> query = textTokenizer.tokenize(queryText);
     List<List<String>> passages = textTokenizer.tokenize(splitPassages);
     BM25Scorer bm25Scorer = new BM25Scorer(BM25_B_VALUE, BM25_K1_VALUE, passages);
-    PriorityQueue<PassageScore> pq = new PriorityQueue<>(Comparator.comparingDouble(x -> x.score));
+    PriorityQueue<PassageScore> pq = new PriorityQueue<>(Comparator.comparingDouble(x -> x.getScore()));
 
     for (int i = 0; i < passages.size(); i++) {
       double score = bm25Scorer.score(query, passages.get(i));
-      LOGGER.info("Passage {} has score {}", passages.get(i), score);
+      LOGGER.info("Passage {} has score {}", i, score);
       pq.offer(new PassageScore(score, i));
       if (pq.size() > TOP_K_PASSAGES) {
         // Maintain heap of top K passages
@@ -236,18 +284,34 @@ public class SearchActionFilter implements ActionFilter {
 
     List<String> topPassages = new ArrayList<>();
     while (!pq.isEmpty()) {
-      topPassages.add(splitPassages.get(pq.poll().index));
+      topPassages.add(splitPassages.get(pq.poll().getIndex()));
     }
+    Collections.reverse(topPassages); // reverse to order from highest to lowest score
     return topPassages;
   }
 
-  public class PassageScore {
-    private double score;
-    private int index;
-
-    public PassageScore(double score, int index) {
-      this.score = score;
-      this.index = index;
-    }
+  private RerankResponse callExternalServiceRerank(RerankRequest rerankRequest) {
+    return AccessController.doPrivileged(
+        (PrivilegedAction<RerankResponse>) () -> {
+          CloseableHttpResponse response = null;
+          try {
+            HttpPost post = new HttpPost(EXTERNAL_SERVICE_ENDPOINT);
+            post.setEntity(new StringEntity(objectMapper.writeValueAsString(rerankRequest)));
+            post.setHeader("Content-type", "application/json");
+            response = httpClient.execute(post);
+            return objectMapper.readValue(response.getEntity().getContent(), RerankResponse.class);
+          } catch (Exception ex) {
+            LOGGER.error("Exception executing request.", ex);
+            return null;
+          } finally {
+            if (response != null) {
+              try {
+                response.close();
+              } catch (IOException e) {
+                LOGGER.error("Exception closing response.", e);
+              }
+            }
+          }
+        });
   }
 }
