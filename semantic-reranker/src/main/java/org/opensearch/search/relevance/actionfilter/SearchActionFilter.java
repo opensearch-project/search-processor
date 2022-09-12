@@ -45,12 +45,15 @@ import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.opensearch.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.common.settings.Settings;
 import org.opensearch.index.query.MatchQueryBuilder;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
 import org.opensearch.search.internal.InternalSearchResponse;
 import org.opensearch.search.profile.SearchProfileShardResults;
+import org.opensearch.search.relevance.client.OpenSearchClient;
+import org.opensearch.search.relevance.constants.Constants;
 import org.opensearch.search.relevance.model.PassageScore;
 import org.opensearch.search.relevance.model.dto.OriginalHit;
 import org.opensearch.search.relevance.model.dto.RerankRequest;
@@ -72,6 +75,7 @@ public class SearchActionFilter implements ActionFilter {
   private static final double BM25_K1_VALUE = 1.6;
   private static final int TOP_K_PASSAGES = 3;
   private static final String EXTERNAL_SERVICE_ENDPOINT = "https://8f56a049-4208-4581-928e-6ffda506bf5a.mock.pstmn.io/rerank"; // mock service
+  private static final String TRUE = "true";
 
   // TODO: Update log levels where required
   private static final Logger LOGGER = LogManager.getLogger(SearchActionFilter.class);
@@ -82,16 +86,17 @@ public class SearchActionFilter implements ActionFilter {
   private final SlidingWindowTextSplitter slidingWindowTextSplitter;
   private final TextTokenizer textTokenizer;
   private final ObjectMapper objectMapper;
-
   private final CloseableHttpClient httpClient;
+  private final OpenSearchClient openSearchClient;
 
-  public SearchActionFilter() {
+  public SearchActionFilter(OpenSearchClient openSearchClient) {
     order = 10; // TODO: Finalize this value
     namedWriteableRegistry = new NamedWriteableRegistry(Collections.emptyList());
     slidingWindowTextSplitter = new SlidingWindowTextSplitter(PASSAGE_SIZE_LIMIT, SLIDING_WINDOW_STEP);
     textTokenizer = new TextTokenizer();
     objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     httpClient = HttpClientBuilder.create().build();
+    this.openSearchClient = openSearchClient;
   }
 
   @Override
@@ -119,6 +124,7 @@ public class SearchActionFilter implements ActionFilter {
     LOGGER.info("Applying action filter on search request: " + searchRequest);
     MatchQueryBuilder matchQueryBuilder = (MatchQueryBuilder) searchRequest.source().query();
     final String queryText = matchQueryBuilder.value().toString();
+    
 
     final ActionListener<Response> searchResponseListener = shouldDoSemanticRerank(searchRequest) ?
         createSearchResponseListener(listener, startTime, queryText) : listener;
@@ -143,7 +149,11 @@ public class SearchActionFilter implements ActionFilter {
     if (indices == null || indices.length != 1) {
       return false;
     }
-
+    
+    Settings settings = openSearchClient.getIndexSettings(indices[0], new String[] { Constants.ENABLED_SETTING_NAME });
+    if (settings == null || !TRUE.equals(settings.get(Constants.ENABLED_SETTING_NAME))) {
+      return false;
+    }
     return true;
   }
 
