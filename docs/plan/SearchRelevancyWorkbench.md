@@ -75,6 +75,7 @@ The next section describes the User Interface components that are driving the wo
                   5. Double Document Flyout
               - **Compare Meta-Data**
                   1. check difference in DSL queries
+                  2. check difference in (query) input params
               - **Compare live search** result with a saved result [V-2]
                   1. check difference between live result set and a golden set/previous saved result
           - Go back single view from compare
