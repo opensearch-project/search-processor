@@ -148,23 +148,3 @@ The next section describes the Backend components that are driving the work flow
        1. User access check
        2. Tenant based check
 
----
-### **Search Analytics Requirement** 
-
-  - Users should be able to:
-    - view aggregated analytics with data from all Search Apps.
-    - filter the analytics view
-      - by search app name, tags using PPL Query.
-      - by time interval.
-    - see total number of:
-      - queries
-      - total number of queries with no results
-      - total result-clicks in the analytics
-      - stats on ranks of clicks.
-    - see graphs for:
-      - total queries
-      - queries without results per hour/day/month (based on time interval selected by user).
-    - see tables of
-      - top queries
-      - top queries with no results.
-
