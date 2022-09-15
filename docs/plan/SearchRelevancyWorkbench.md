@@ -67,17 +67,20 @@ The next section describes the User Interface components that are driving the wo
           9. Document Flyout - 
              - ability to select a particular document from the result table and see complete json of the document [similar to events analytics]
       5. **Compare** - Ability to select 2 search configs for comparison in runtime
-              - **Compare Search Configs**:
-                  1. Click compare button
-                  2. Flyout Select 2nd Search Config
-                  3. Split the result facet in two
-                  4. synced Field Selector facet
-                  5. Double Document Flyout
-              - **Compare Meta-Data**
-                  1. check difference in DSL queries
-                  2. check difference in (query) input params
-              - **Compare live search** result with a saved result [V-2]
-                  1. check difference between live result set and a golden set/previous saved result
+            
+            - **Compare Search Configs**:
+                 1. Click compare button
+                 2. Flyout Select 2nd Search Config
+                 3. Split the result facet in two
+                 4. synced Field Selector facet
+                 5. Double Document Flyout
+          
+            - **Compare Meta-Data**
+                 1. check difference in DSL queries
+                 2. check difference in (query) input params
+            
+            - **Compare live search** result with a saved result [V-2]
+                 1. check difference between live result set and a golden set/previous saved result
           - Go back single view from compare
       6. **Save search meta-data** [saved explicitly by user]
          - Fields:
