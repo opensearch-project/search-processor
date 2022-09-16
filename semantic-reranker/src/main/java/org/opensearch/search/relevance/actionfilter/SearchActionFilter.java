@@ -52,6 +52,7 @@ import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
 import org.opensearch.search.internal.InternalSearchResponse;
 import org.opensearch.search.profile.SearchProfileShardResults;
+import org.opensearch.search.relevance.client.KendraClient;
 import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.constants.Constants;
 import org.opensearch.search.relevance.model.PassageScore;
@@ -88,8 +89,9 @@ public class SearchActionFilter implements ActionFilter {
   private final ObjectMapper objectMapper;
   private final CloseableHttpClient httpClient;
   private final OpenSearchClient openSearchClient;
+  private final KendraClient kendraClient;
 
-  public SearchActionFilter(OpenSearchClient openSearchClient) {
+  public SearchActionFilter(OpenSearchClient openSearchClient, KendraClient kendraClient) {
     order = 10; // TODO: Finalize this value
     namedWriteableRegistry = new NamedWriteableRegistry(Collections.emptyList());
     slidingWindowTextSplitter = new SlidingWindowTextSplitter(PASSAGE_SIZE_LIMIT, SLIDING_WINDOW_STEP);
@@ -97,6 +99,7 @@ public class SearchActionFilter implements ActionFilter {
     objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     httpClient = HttpClientBuilder.create().build();
     this.openSearchClient = openSearchClient;
+    this.kendraClient = kendraClient;
   }
 
   @Override
