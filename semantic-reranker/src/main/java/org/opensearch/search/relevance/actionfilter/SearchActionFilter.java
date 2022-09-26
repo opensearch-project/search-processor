@@ -129,11 +129,28 @@ public class SearchActionFilter implements ActionFilter {
 
     final SearchRequest searchRequest = (SearchRequest) request;
     LOGGER.info("Applying action filter on search request: " + searchRequest);
-    final QueryParser.QueryParserResult queryParserResult = queryParser.parse(searchRequest.source().query());
 
-    final ActionListener<Response> searchResponseListener = queryParserResult != null && shouldDoSemanticRerank(searchRequest) ?
-        createSearchResponseListener(listener, startTime, queryParserResult) : listener;
-    chain.proceed(task, action, request, searchResponseListener);
+    boolean shouldDoSemanticRerank = shouldDoSemanticRerank(searchRequest);
+    if (shouldDoSemanticRerank) {
+      // If user has disabled fetching document source, overwrite and enable
+      // in order to access document contents for reranking
+      boolean pluginEnabledFetchSource = false;
+      if (searchRequest.source().fetchSource() != null && !searchRequest.source().fetchSource().fetchSource()) {
+        searchRequest.source().fetchSource(true);
+        pluginEnabledFetchSource = true;
+      }
+
+      // Extract semantic query string from request
+      final QueryParser.QueryParserResult queryParserResult = queryParser.parse(searchRequest.source().query());
+      if (queryParserResult != null) {
+        final ActionListener<Response> searchResponseListener = createSearchResponseListener(
+            listener, startTime, queryParserResult, pluginEnabledFetchSource);
+        chain.proceed(task, action, request, searchResponseListener);
+        return;
+      }
+    }
+
+    chain.proceed(task, action, request, listener);
   }
 
   private boolean shouldDoSemanticRerank(final SearchRequest searchRequest) {
@@ -144,12 +161,10 @@ public class SearchActionFilter implements ActionFilter {
       return false;
     }
 
-    // TODO: Should we re-rank if request source is empty?
     if (searchRequest.source() == null) {
       return false;
     }
 
-    // TODO: Should we re-rank if it is a multi-index request?
     final String[] indices = searchRequest.indices();
     if (indices == null || indices.length != 1) {
       return false;
@@ -163,7 +178,10 @@ public class SearchActionFilter implements ActionFilter {
   }
 
   private <Response extends ActionResponse> ActionListener<Response> createSearchResponseListener(
-      final ActionListener<Response> listener, final long startTime, final QueryParser.QueryParserResult queryParserResult) {
+      final ActionListener<Response> listener,
+      final long startTime,
+      final QueryParser.QueryParserResult queryParserResult,
+      final boolean pluginEnabledFetchSource) {
     return new ActionListener<Response>() {
 
       @Override
@@ -186,7 +204,8 @@ public class SearchActionFilter implements ActionFilter {
 
           LOGGER.info("Extracting search hits");
           final SearchHits hits = new SearchHits(in);
-          final SearchHits newHits = doSemanticRerank(queryParserResult, hits);
+
+          final SearchHits newHits = doSemanticRerank(queryParserResult, hits, pluginEnabledFetchSource);
 
           LOGGER.info("Extracting remaining response fields");
           final InternalAggregations aggregations = in.readBoolean() ? InternalAggregations.readFrom(in) : null;
@@ -239,13 +258,14 @@ public class SearchActionFilter implements ActionFilter {
     };
   }
 
-  private SearchHits doSemanticRerank(final QueryParser.QueryParserResult queryParserResult, final SearchHits hits) {
+  private SearchHits doSemanticRerank(
+      final QueryParser.QueryParserResult queryParserResult,
+      final SearchHits hits,
+      final boolean pluginEnabledFetchSource) {
     LOGGER.info("Beginning semantic reranking of {} search hits", hits.getTotalHits());
     List<OriginalHit> originalHits = new ArrayList<>();
     for (SearchHit searchHit: hits.getHits()) {
-      // TODO: Refactor to separate out preprocessing
       Map<String, Object> docSourceMap = searchHit.getSourceAsMap();
-      // TODO: Fetch required document fields from index settings / query request fields
       LOGGER.info("Splitting document source into passages");
       List<String> splitPassages = slidingWindowTextSplitter.split(docSourceMap.get(queryParserResult.getBodyFieldName()).toString());
       LOGGER.info("Split document source into {} passages: {}", splitPassages.size(), splitPassages);
@@ -269,6 +289,10 @@ public class SearchActionFilter implements ActionFilter {
           LOGGER.warn("Response from external service references hit id {}, which does not exist in original results. Skipping.",
               rerankedHit.getId());
           continue;
+        }
+        if (pluginEnabledFetchSource) {
+          // User disabled fetching document source, so remove from response
+          searchHit.sourceRef(null);
         }
         searchHit.score(rerankedHit.getScore());
         maxScore = Math.max(maxScore, rerankedHit.getScore());
