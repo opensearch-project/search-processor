@@ -126,3 +126,8 @@ sourceSets {
         }
     }
 }
+
+// TODO: Enable these checks
+dependencyLicenses.enabled = false
+thirdPartyAudit.enabled = false
+loggerUsageCheck.enabled = false
