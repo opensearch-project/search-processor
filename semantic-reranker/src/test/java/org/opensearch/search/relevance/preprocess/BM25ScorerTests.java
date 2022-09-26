@@ -11,12 +11,10 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Assert;
-import org.junit.Test;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class BM25ScorerTests extends OpenSearchTestCase {
-
-  @Test
+  
   public void testBM25Scorer() {
     TextTokenizer textTokenizer = new TextTokenizer();
     List<String> document1 = textTokenizer.tokenize(

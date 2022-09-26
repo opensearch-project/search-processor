@@ -61,6 +61,7 @@ import org.opensearch.search.relevance.model.dto.RerankRequest;
 import org.opensearch.search.relevance.model.dto.RerankResponse;
 import org.opensearch.search.relevance.model.dto.RerankedHit;
 import org.opensearch.search.relevance.preprocess.BM25Scorer;
+import org.opensearch.search.relevance.preprocess.QueryParser;
 import org.opensearch.search.relevance.preprocess.SlidingWindowTextSplitter;
 import org.opensearch.search.relevance.preprocess.TextTokenizer;
 import org.opensearch.search.suggest.Suggest;
@@ -88,6 +89,7 @@ public class SearchActionFilter implements ActionFilter {
   private final TextTokenizer textTokenizer;
   private final ObjectMapper objectMapper;
   private final CloseableHttpClient httpClient;
+  private final QueryParser queryParser;
   private final OpenSearchClient openSearchClient;
   private final KendraClient kendraClient;
 
@@ -98,6 +100,7 @@ public class SearchActionFilter implements ActionFilter {
     textTokenizer = new TextTokenizer();
     objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     httpClient = HttpClientBuilder.create().build();
+    queryParser = new QueryParser();
     this.openSearchClient = openSearchClient;
     this.kendraClient = kendraClient;
   }
@@ -125,17 +128,15 @@ public class SearchActionFilter implements ActionFilter {
 
     final SearchRequest searchRequest = (SearchRequest) request;
     LOGGER.info("Applying action filter on search request: " + searchRequest);
-    MatchQueryBuilder matchQueryBuilder = (MatchQueryBuilder) searchRequest.source().query();
-    final String queryText = matchQueryBuilder.value().toString();
-    
+    final QueryParser.QueryParserResult queryParserResult = queryParser.parse(searchRequest.source().query());
 
-    final ActionListener<Response> searchResponseListener = shouldDoSemanticRerank(searchRequest) ?
-        createSearchResponseListener(listener, startTime, queryText) : listener;
+    final ActionListener<Response> searchResponseListener = queryParserResult != null && shouldDoSemanticRerank(searchRequest) ?
+        createSearchResponseListener(listener, startTime, queryParserResult) : listener;
     chain.proceed(task, action, request, searchResponseListener);
   }
 
   private boolean shouldDoSemanticRerank(final SearchRequest searchRequest) {
-    // TODO: Check index settings or query input to determine if semantic reranking is enabled
+    // TODO: Check if these can be moved into QueryParser for edge cases.
 
     // Don't re-rank if scroll search is enabled
     if (searchRequest.scroll() != null) {
@@ -161,7 +162,7 @@ public class SearchActionFilter implements ActionFilter {
   }
 
   private <Response extends ActionResponse> ActionListener<Response> createSearchResponseListener(
-      final ActionListener<Response> listener, final long startTime, final String queryText) {
+      final ActionListener<Response> listener, final long startTime, final QueryParser.QueryParserResult queryParserResult) {
     return new ActionListener<Response>() {
 
       @Override
@@ -184,7 +185,7 @@ public class SearchActionFilter implements ActionFilter {
 
           LOGGER.info("Extracting search hits");
           final SearchHits hits = new SearchHits(in);
-          final SearchHits newHits = doSemanticRerank(queryText, hits);
+          final SearchHits newHits = doSemanticRerank(queryParserResult, hits);
 
           LOGGER.info("Extracting remaining response fields");
           final InternalAggregations aggregations = in.readBoolean() ? InternalAggregations.readFrom(in) : null;
@@ -237,7 +238,7 @@ public class SearchActionFilter implements ActionFilter {
     };
   }
 
-  private SearchHits doSemanticRerank(final String queryText, final SearchHits hits) {
+  private SearchHits doSemanticRerank(final QueryParser.QueryParserResult queryParserResult, final SearchHits hits) {
     LOGGER.info("Beginning semantic reranking of {} search hits", hits.getTotalHits());
     List<OriginalHit> originalHits = new ArrayList<>();
     for (SearchHit searchHit: hits.getHits()) {
@@ -245,14 +246,14 @@ public class SearchActionFilter implements ActionFilter {
       Map<String, Object> docSourceMap = searchHit.getSourceAsMap();
       // TODO: Fetch required document fields from index settings / query request fields
       LOGGER.info("Splitting document source into passages");
-      List<String> splitPassages = slidingWindowTextSplitter.split(docSourceMap.get("text").toString());
+      List<String> splitPassages = slidingWindowTextSplitter.split(docSourceMap.get(queryParserResult.getBodyFieldName()).toString());
       LOGGER.info("Split document source into {} passages: {}", splitPassages.size(), splitPassages);
-      List<String> topPassages = getTopPassages(queryText, splitPassages);
+      List<String> topPassages = getTopPassages(queryParserResult.getQueryText(), splitPassages);
       LOGGER.info("Top passages {}", topPassages);
       originalHits.add(new OriginalHit(searchHit.getId(), searchHit.getScore(), topPassages));
     }
 
-    final RerankRequest rerankRequest = new RerankRequest(queryText, originalHits);
+    final RerankRequest rerankRequest = new RerankRequest(queryParserResult.getQueryText(), originalHits);
     final RerankResponse rerankResponse = callExternalServiceRerank(rerankRequest);
     if (rerankResponse != null) {
       Map<String, SearchHit> idToSearchHitMap = new HashMap<>();
