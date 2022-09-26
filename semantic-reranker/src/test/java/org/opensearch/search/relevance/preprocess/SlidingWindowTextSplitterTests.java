@@ -14,74 +14,95 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.Scanner;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import org.opensearch.test.OpenSearchTestCase;
 
 public class SlidingWindowTextSplitterTests extends OpenSearchTestCase {
-  private static final String TEST_INPUT =
-      "This is a test 1. This is a test 2. This is a test 3. This is a test 4. This is a test 5.";
-  private static final String EXPECTED_SPLIT_1 = "This is a test 1. This is a test 2. ";
-  private static final String EXPECTED_SPLIT_2 = "This is a test 2. This is a test 3. ";
-  private static final String EXPECTED_SPLIT_3 = "This is a test 3. This is a test 4. ";
-  private static final String EXPECTED_SPLIT_4 = "This is a test 4. This is a test 5.";
-  private static final String EXPECTED_SPLIT_4_WITH_END_SPACE = "This is a test 4. This is a test 5. ";
-
-  private static final String EXPECTED_LARGE_SPLIT_1 = "This is a test 3. This is a test 4. This is a test 5.";
-
+  private static final int MAXIMUM_PASSAGES = 10;
   private static final String TEST_FILE_PATH = "splitter/input.txt";
 
   public void testConstructWithInvalidInputs() {
     // Step size cannot be larger than window size
-    assertThrows(IllegalArgumentException.class, () -> new SlidingWindowTextSplitter(3, 4));
+    assertThrows(IllegalArgumentException.class, () -> new SlidingWindowTextSplitter(3, 4, MAXIMUM_PASSAGES));
   }
 
   public void testSplitWithEmptyInput() {
-    SlidingWindowTextSplitter splitter = new SlidingWindowTextSplitter(10, 4);
+    SlidingWindowTextSplitter splitter = new SlidingWindowTextSplitter(10, 4, MAXIMUM_PASSAGES);
     assertEquals(Collections.emptyList(), splitter.split(""));
   }
 
   public void testSetSlidingWindowWithInvalidStepSize() {
-    SlidingWindowTextSplitter splitter = new SlidingWindowTextSplitter(10, 4);
+    SlidingWindowTextSplitter splitter = new SlidingWindowTextSplitter(10, 4, MAXIMUM_PASSAGES);
     assertThrows(IllegalArgumentException.class, () -> splitter.setSlidingWindow(2, 4));
   }
 
   public void testSetSlidingWindowUpdatesSplitter() {
-    SlidingWindowTextSplitter splitter = new SlidingWindowTextSplitter(30, 10);
-    List<String> splitText = splitter.split(TEST_INPUT);
+    SlidingWindowTextSplitter splitter = new SlidingWindowTextSplitter(30, 10, MAXIMUM_PASSAGES);
+    final String testInput = generateTestInput(1, 5, false);
+    List<String> splitText = splitter.split(testInput);
 
     assertEquals(4, splitText.size());
-    assertEquals(Arrays.asList(EXPECTED_SPLIT_1, EXPECTED_SPLIT_2, EXPECTED_SPLIT_3, EXPECTED_SPLIT_4),
+    assertEquals(Arrays.asList(
+          generateTestInput(1, 2, true),
+          generateTestInput(2, 3, true),
+          generateTestInput(3, 4, true),
+          generateTestInput(4, 5, false)),
         splitText);
 
     // double window size, expect each passage to be loonger
     splitter.setSlidingWindow(60, 10);
-    splitText = splitter.split(TEST_INPUT);
+    splitText = splitter.split(testInput);
 
     assertEquals(2, splitText.size());
-    assertEquals(Arrays.asList(EXPECTED_SPLIT_1 + EXPECTED_SPLIT_3, EXPECTED_SPLIT_2 + EXPECTED_SPLIT_4),
+    assertEquals(Arrays.asList(
+        generateTestInput(1, 4, true),
+        generateTestInput(2, 5, false)),
         splitText);
 
     // double
     splitter.setSlidingWindow(60, 30);
-    splitText = splitter.split(TEST_INPUT);
+    splitText = splitter.split(testInput);
 
     assertEquals(2, splitText.size());
-    assertEquals(Arrays.asList(EXPECTED_SPLIT_1 + EXPECTED_SPLIT_3,
-            EXPECTED_LARGE_SPLIT_1),
+    assertEquals(Arrays.asList(
+            generateTestInput(1, 4, true),
+            generateTestInput(3, 5, false)),
+        splitText);
+  }
+
+  public void testSplitObeysMaximumPassagesLimit() {
+    final int maximumPassages = 3;
+    final String inputText = generateTestInput(1, 5, false);
+
+    SlidingWindowTextSplitter splitter = new SlidingWindowTextSplitter(30, 10, maximumPassages);
+    List<String> splitText = splitter.split(inputText);
+
+    assertEquals(maximumPassages, splitText.size());
+    assertEquals(Arrays.asList(
+            generateTestInput(1, 2, true),
+            generateTestInput(2, 3, true),
+            generateTestInput(3, 4, true)),
         splitText);
   }
 
   public void testSplitWhenLastSplitIsShorterThanWindow() {
     final String shortText = "Short text";
-    final String inputText = String.join(" ", TEST_INPUT, shortText);
+    final String inputText = String.join(" ", generateTestInput(1, 5, false), shortText);
     final String expectedFinalSplit = String.join(" ", "This is a test 5.", shortText);
 
-    SlidingWindowTextSplitter splitter = new SlidingWindowTextSplitter(30, 10);
+    SlidingWindowTextSplitter splitter = new SlidingWindowTextSplitter(30, 10, MAXIMUM_PASSAGES);
     List<String> splitText = splitter.split(inputText);
 
     assertEquals(5, splitText.size());
-    assertEquals(Arrays.asList(EXPECTED_SPLIT_1, EXPECTED_SPLIT_2, EXPECTED_SPLIT_3,
-            EXPECTED_SPLIT_4_WITH_END_SPACE, expectedFinalSplit),
+    assertEquals(Arrays.asList(
+            generateTestInput(1, 2, true),
+            generateTestInput(2, 3, true),
+            generateTestInput(3, 4, true),
+            generateTestInput(4, 5, true),
+            expectedFinalSplit),
         splitText);
   }
 
@@ -92,8 +113,8 @@ public class SlidingWindowTextSplitterTests extends OpenSearchTestCase {
     // Provide a buffer of 20 characters
     final int expectedOverlap = windowSize - stepSize - 20;
 
-    SlidingWindowTextSplitter splitter = new SlidingWindowTextSplitter(windowSize, stepSize);
-    final String input = loadTestInput();
+    SlidingWindowTextSplitter splitter = new SlidingWindowTextSplitter(windowSize, stepSize, MAXIMUM_PASSAGES);
+    final String input = loadTestInputFromFile();
 
     List<String> splitText = splitter.split(input);
 
@@ -110,8 +131,8 @@ public class SlidingWindowTextSplitterTests extends OpenSearchTestCase {
     final int windowSize = 1500;
     final int stepSize = 1300;
 
-    SlidingWindowTextSplitter splitter = new SlidingWindowTextSplitter(windowSize, stepSize);
-    final String input = loadTestInput();
+    SlidingWindowTextSplitter splitter = new SlidingWindowTextSplitter(windowSize, stepSize, MAXIMUM_PASSAGES);
+    final String input = loadTestInputFromFile();
     String inputWithoutSentenceBoundaries = input.replace(".", " ");
 
     List<String> splitText = splitter.split(inputWithoutSentenceBoundaries);
@@ -120,7 +141,14 @@ public class SlidingWindowTextSplitterTests extends OpenSearchTestCase {
     assertTrue(splitText.size() > 1);
   }
 
-  private String loadTestInput() throws IOException {
+  private String generateTestInput(int start, int end, boolean addTerminalSpace) {
+    final String testInput = IntStream.range(start, end + 1).boxed().map(
+        i -> String.format(Locale.ENGLISH, "This is a test %s.", i)
+    ).collect(Collectors.joining(" "));
+    return addTerminalSpace ? testInput + " " : testInput;
+  }
+
+  private String loadTestInputFromFile() throws IOException {
     final Scanner scanner = new Scanner(SlidingWindowTextSplitterTests.class.getClassLoader()
         .getResourceAsStream(TEST_FILE_PATH),
         StandardCharsets.UTF_8.name()).useDelimiter("\\A");

@@ -33,12 +33,18 @@ public class SlidingWindowTextSplitter {
    */
   private Integer stepSize;
 
+  /**
+   * The maximum number of passages to be extracted from the input text
+   */
+  private Integer maximumPassages;
+
   //local parameters to control sentence/token iteration
   private Pair<Integer, Integer> lastSentenceBoundary;
   private boolean useTokenIterator;
 
-  public SlidingWindowTextSplitter(int windowSize, int stepSize) {
+  public SlidingWindowTextSplitter(int windowSize, int stepSize, int maximumPassages) {
     setSlidingWindow(windowSize, stepSize);
+    this.maximumPassages = maximumPassages;
     this.useTokenIterator = Boolean.FALSE;
     this.lastSentenceBoundary = null;
   }
@@ -77,13 +83,14 @@ public class SlidingWindowTextSplitter {
     BreakIterator tokenIterator = BreakIterator.getLineInstance(Locale.ENGLISH);
     sentenceIterator.setText(text);
 
+    int passageCounter = 0;
     int startBoundaryIndex = 0;
     int endBoundaryIndex = 0;
 
     int nextStartBoundaryIndex = 0;
     boolean nextStartBoundaryIndexUpdated = false;
 
-    while (endBoundaryIndex != BreakIterator.DONE) {
+    while ((passageCounter < this.maximumPassages) && (endBoundaryIndex != BreakIterator.DONE)) {
       // If current passage length is already larger than the step size,
       // use the end index as the start index for next window
       if (!nextStartBoundaryIndexUpdated && (endBoundaryIndex - startBoundaryIndex + 1) >= stepSize) {
@@ -94,10 +101,12 @@ public class SlidingWindowTextSplitter {
       if (endBoundaryIndex == text.length() ) {
         // End of the input text. Add the passage, irrespective of its length.
         splitText.add(text.substring(startBoundaryIndex, endBoundaryIndex));
+        ++passageCounter;
       } else if ((endBoundaryIndex - startBoundaryIndex + 1) >= windowSize && endBoundaryIndex > nextStartBoundaryIndex ) {
         // If current passage length is greater than both step and window size, extend the window
         // such that all passages have some overlap
         splitText.add(text.substring(startBoundaryIndex, endBoundaryIndex));
+        ++passageCounter;
 
         startBoundaryIndex = nextStartBoundaryIndex;
 

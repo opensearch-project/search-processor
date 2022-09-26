@@ -73,6 +73,7 @@ public class SearchActionFilter implements ActionFilter {
   // TODO: Move configs to external config file.
   private static final int PASSAGE_SIZE_LIMIT = 600;
   private static final int SLIDING_WINDOW_STEP = PASSAGE_SIZE_LIMIT - 50;
+  private static final int MAXIMUM_PASSAGES = 10;
   private static final double BM25_B_VALUE = 0.75;
   private static final double BM25_K1_VALUE = 1.6;
   private static final int TOP_K_PASSAGES = 3;
@@ -96,7 +97,7 @@ public class SearchActionFilter implements ActionFilter {
   public SearchActionFilter(OpenSearchClient openSearchClient, KendraClient kendraClient) {
     order = 10; // TODO: Finalize this value
     namedWriteableRegistry = new NamedWriteableRegistry(Collections.emptyList());
-    slidingWindowTextSplitter = new SlidingWindowTextSplitter(PASSAGE_SIZE_LIMIT, SLIDING_WINDOW_STEP);
+    slidingWindowTextSplitter = new SlidingWindowTextSplitter(PASSAGE_SIZE_LIMIT, SLIDING_WINDOW_STEP, MAXIMUM_PASSAGES);
     textTokenizer = new TextTokenizer();
     objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     httpClient = HttpClientBuilder.create().build();
