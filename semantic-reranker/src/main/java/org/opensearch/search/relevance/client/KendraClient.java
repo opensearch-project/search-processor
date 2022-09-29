@@ -21,12 +21,13 @@ import java.security.PrivilegedAction;
 public class KendraClient {
   // TODO: Update this client. Kendra is placeholder and intentionally not being used right now.
   private AWSkendra client;
+  private String endpointId;
 
   public KendraClient(KendraClientSettings clientSettings) {
     this.client = AccessController.doPrivileged(
         (PrivilegedAction<AWSkendra>) () -> {
           final AWSCredentialsProvider credentialsProvider;
-          final AWSCredentials credentials = clientSettings.credentials;
+          final AWSCredentials credentials = clientSettings.getCredentials();
           if (credentials == null) {
             credentialsProvider = DefaultAWSCredentialsProviderChain.getInstance();
           } else {
@@ -38,5 +39,6 @@ public class KendraClient {
               .build();
         }
     );
+    this.endpointId = clientSettings.getEndpointId();
   }
 }

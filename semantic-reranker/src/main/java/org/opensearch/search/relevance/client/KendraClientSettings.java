@@ -38,16 +38,28 @@ public final class KendraClientSettings {
    * The session token for connecting to Kendra.
    */
   public static final Setting<SecureString> SESSION_TOKEN_SETTING = SecureSetting.secureString("semantic_ranker.kendra.session_token", null);
+  
+  public static final Setting<String> ENDPOINT_ID_SETTING = Setting.simpleString("semantic_ranker.kendra.endpoint_id", Setting.Property.NodeScope);
 
   private static final Logger logger = LogManager.getLogger(KendraClientSettings.class);
 
   /**
    * Credentials to authenticate with Kendra.
    */
-  final AWSCredentials credentials;
+  private final AWSCredentials credentials;
+  private final String endpointId;
 
-  protected KendraClientSettings(AWSCredentials credentials) {
+  protected KendraClientSettings(AWSCredentials credentials, String endpointId) {
     this.credentials = credentials;
+    this.endpointId = endpointId;
+  }
+
+  public AWSCredentials getCredentials() {
+    return credentials;
+  }
+
+  public String getEndpointId() {
+    return endpointId;
   }
 
   static AWSCredentials loadCredentials(Settings settings) {
@@ -84,7 +96,7 @@ public final class KendraClientSettings {
    */
   public static KendraClientSettings getClientSettings(Settings settings) {
     final AWSCredentials credentials = loadCredentials(settings);
-    return new KendraClientSettings(credentials);
+    return new KendraClientSettings(credentials, ENDPOINT_ID_SETTING.get(settings));
   }
 
 }

@@ -46,7 +46,6 @@ import org.opensearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.opensearch.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.index.query.MatchQueryBuilder;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
@@ -154,23 +153,24 @@ public class SearchActionFilter implements ActionFilter {
   }
 
   private boolean shouldDoSemanticRerank(final SearchRequest searchRequest) {
-    // TODO: Check if these can be moved into QueryParser for edge cases.
-
-    // Don't re-rank if scroll search is enabled
-    if (searchRequest.scroll() != null) {
-      return false;
-    }
-
     if (searchRequest.source() == null) {
       return false;
     }
 
+    // Skip if there is scroll, pagination, or sorting.
+    if (searchRequest.scroll() != null || searchRequest.source().from() > 0 ||
+        (searchRequest.source().sorts() != null && !searchRequest.source().sorts().isEmpty())) {
+      return false;
+    }
+
     final String[] indices = searchRequest.indices();
+    // Skip if no or more than 1 indices is specified.
     if (indices == null || indices.length != 1) {
       return false;
     }
     
     Settings settings = openSearchClient.getIndexSettings(indices[0], new String[] { Constants.ENABLED_SETTING_NAME });
+    // Skip if plugin enabled flag is not true.
     if (settings == null || !TRUE.equals(settings.get(Constants.ENABLED_SETTING_NAME))) {
       return false;
     }

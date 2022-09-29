@@ -50,11 +50,15 @@ public class SemanticRerankerPlugin extends Plugin implements ActionPlugin {
   @Override
   public List<Setting<?>> getSettings() {
     List<Setting<?>> settings = new ArrayList<>();
+    // Following settings are stored in index settings
     settings.add(new Setting<>(Constants.ENABLED_SETTING_NAME, "", Function.identity(),
         Setting.Property.Dynamic, Setting.Property.IndexScope));
+    // Following settings are stored in opensearch.keystore
     settings.add(KendraClientSettings.ACCESS_KEY_SETTING);
     settings.add(KendraClientSettings.SECRET_KEY_SETTING);
     settings.add(KendraClientSettings.SESSION_TOKEN_SETTING);
+    // Following settings are stored in opensearch.yml
+    settings.add(KendraClientSettings.ENDPOINT_ID_SETTING);
     return settings;
   }
   
