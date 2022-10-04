@@ -12,10 +12,8 @@ import static org.opensearch.action.search.ShardSearchFailure.readShardSearchFai
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -23,9 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.LogManager;
@@ -51,14 +46,14 @@ import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
 import org.opensearch.search.internal.InternalSearchResponse;
 import org.opensearch.search.profile.SearchProfileShardResults;
-import org.opensearch.search.relevance.client.KendraClient;
+import org.opensearch.search.relevance.client.KendraHttpClient;
 import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.constants.Constants;
 import org.opensearch.search.relevance.model.PassageScore;
-import org.opensearch.search.relevance.model.dto.OriginalHit;
+import org.opensearch.search.relevance.model.dto.Document;
 import org.opensearch.search.relevance.model.dto.RerankRequest;
-import org.opensearch.search.relevance.model.dto.RerankResponse;
-import org.opensearch.search.relevance.model.dto.RerankedHit;
+import org.opensearch.search.relevance.model.dto.RerankResult;
+import org.opensearch.search.relevance.model.dto.RerankResultItem;
 import org.opensearch.search.relevance.preprocess.BM25Scorer;
 import org.opensearch.search.relevance.preprocess.QueryParser;
 import org.opensearch.search.relevance.preprocess.SlidingWindowTextSplitter;
@@ -76,7 +71,7 @@ public class SearchActionFilter implements ActionFilter {
   private static final double BM25_B_VALUE = 0.75;
   private static final double BM25_K1_VALUE = 1.6;
   private static final int TOP_K_PASSAGES = 3;
-  private static final String EXTERNAL_SERVICE_ENDPOINT = "https://8f56a049-4208-4581-928e-6ffda506bf5a.mock.pstmn.io/rerank"; // mock service
+//  private static final String EXTERNAL_SERVICE_ENDPOINT = "https://8f56a049-4208-4581-928e-6ffda506bf5a.mock.pstmn.io/rerank"; // mock service
   private static final String TRUE = "true";
 
   // TODO: Update log levels where required
@@ -91,9 +86,9 @@ public class SearchActionFilter implements ActionFilter {
   private final CloseableHttpClient httpClient;
   private final QueryParser queryParser;
   private final OpenSearchClient openSearchClient;
-  private final KendraClient kendraClient;
+  private final KendraHttpClient kendraClient;
 
-  public SearchActionFilter(OpenSearchClient openSearchClient, KendraClient kendraClient) {
+  public SearchActionFilter(OpenSearchClient openSearchClient, KendraHttpClient kendraClient) {
     order = 10; // TODO: Finalize this value
     namedWriteableRegistry = new NamedWriteableRegistry(Collections.emptyList());
     slidingWindowTextSplitter = new SlidingWindowTextSplitter(PASSAGE_SIZE_LIMIT, SLIDING_WINDOW_STEP, MAXIMUM_PASSAGES);
@@ -262,46 +257,48 @@ public class SearchActionFilter implements ActionFilter {
       final QueryParser.QueryParserResult queryParserResult,
       final SearchHits hits,
       final boolean pluginEnabledFetchSource) {
-    LOGGER.info("Beginning semantic reranking of {} search hits", hits.getTotalHits());
-    List<OriginalHit> originalHits = new ArrayList<>();
-    for (SearchHit searchHit: hits.getHits()) {
-      Map<String, Object> docSourceMap = searchHit.getSourceAsMap();
-      LOGGER.info("Splitting document source into passages");
-      List<String> splitPassages = slidingWindowTextSplitter.split(docSourceMap.get(queryParserResult.getBodyFieldName()).toString());
-      LOGGER.info("Split document source into {} passages: {}", splitPassages.size(), splitPassages);
-      List<String> topPassages = getTopPassages(queryParserResult.getQueryText(), splitPassages);
-      LOGGER.info("Top passages {}", topPassages);
-      originalHits.add(new OriginalHit(searchHit.getId(), searchHit.getScore(), topPassages));
-    }
+    try {
+      LOGGER.info("Beginning semantic reranking of {} search hits", hits.getTotalHits());
+      List<Document> originalHits = new ArrayList<>();
+      for (SearchHit searchHit : hits.getHits()) {
+        Map<String, Object> docSourceMap = searchHit.getSourceAsMap();
+        LOGGER.info("Splitting document source into passages");
+        List<String> splitPassages = slidingWindowTextSplitter.split(docSourceMap.get(queryParserResult.getBodyFieldName()).toString());
+        LOGGER.info("Split document source into {} passages: {}", splitPassages.size(), splitPassages);
+        List<String> topPassages = getTopPassages(queryParserResult.getQueryText(), splitPassages);
+        LOGGER.info("Top passages {}", topPassages);
+        originalHits.add(
+            new Document(searchHit.getId(), "title", topPassages, null, Arrays.asList(Arrays.asList("passage")), searchHit.getScore())
+        );
+      }
 
-    final RerankRequest rerankRequest = new RerankRequest(queryParserResult.getQueryText(), originalHits);
-    final RerankResponse rerankResponse = callExternalServiceRerank(rerankRequest);
-    if (rerankResponse != null) {
+      final RerankRequest rerankRequest = new RerankRequest(null, queryParserResult.getQueryText(), originalHits);
+      final RerankResult rerankResult = kendraClient.rerank(rerankRequest);
       Map<String, SearchHit> idToSearchHitMap = new HashMap<>();
       for (SearchHit searchHit : hits.getHits()) {
         idToSearchHitMap.put(searchHit.getId(), searchHit);
       }
       List<SearchHit> newSearchHits = new ArrayList<>();
       float maxScore = 0;
-      for (RerankedHit rerankedHit : rerankResponse.getHits()) {
-        SearchHit searchHit = idToSearchHitMap.get(rerankedHit.getId());
+      for (RerankResultItem rerankResultItem : rerankResult.getResultItems()) {
+        SearchHit searchHit = idToSearchHitMap.get(rerankResultItem.getDocumentId());
         if (searchHit == null) {
           LOGGER.warn("Response from external service references hit id {}, which does not exist in original results. Skipping.",
-              rerankedHit.getId());
+              rerankResultItem.getDocumentId());
           continue;
         }
         if (pluginEnabledFetchSource) {
           // User disabled fetching document source, so remove from response
           searchHit.sourceRef(null);
         }
-        searchHit.score(rerankedHit.getScore());
-        maxScore = Math.max(maxScore, rerankedHit.getScore());
+        searchHit.score(rerankResultItem.getScore());
+        maxScore = Math.max(maxScore, rerankResultItem.getScore());
         newSearchHits.add(searchHit);
       }
       return new SearchHits(newSearchHits.toArray(new SearchHit[newSearchHits.size()]), hits.getTotalHits(), maxScore);
-    } else {
-      LOGGER.warn("Failed to get response from external service. Returning original search results without re-ranking.");
-      return new SearchHits(hits.getHits(), hits.getTotalHits(), hits.getMaxScore());
+    } catch (Exception ex) {
+      LOGGER.error("Failed to do semantic re-rank. Returning original search results without re-ranking.", ex);
+      return hits;
     }
   }
 
@@ -329,28 +326,29 @@ public class SearchActionFilter implements ActionFilter {
     return topPassages;
   }
 
-  private RerankResponse callExternalServiceRerank(RerankRequest rerankRequest) {
-    return AccessController.doPrivileged(
-        (PrivilegedAction<RerankResponse>) () -> {
-          CloseableHttpResponse response = null;
-          try {
-            HttpPost post = new HttpPost(EXTERNAL_SERVICE_ENDPOINT);
-            post.setEntity(new StringEntity(objectMapper.writeValueAsString(rerankRequest)));
-            post.setHeader("Content-type", "application/json");
-            response = httpClient.execute(post);
-            return objectMapper.readValue(response.getEntity().getContent(), RerankResponse.class);
-          } catch (Exception ex) {
-            LOGGER.error("Exception executing request.", ex);
-            return null;
-          } finally {
-            if (response != null) {
-              try {
-                response.close();
-              } catch (IOException e) {
-                LOGGER.error("Exception closing response.", e);
-              }
-            }
-          }
-        });
-  }
+//  private RerankResult callExternalServiceRerank(RerankRequest rerankRequest) {
+//    return AccessController.doPrivileged(
+//        (PrivilegedAction<RerankResult>) () -> {
+//          CloseableHttpResponse response = null;
+//          try {
+//            HttpPost post = new HttpPost(EXTERNAL_SERVICE_ENDPOINT);
+//            post.setEntity(new StringEntity(objectMapper.writeValueAsString(rerankRequest)));
+//            post.setHeader("Content-type", "application/json");
+//            response = httpClient.execute(post);
+//            return objectMapper.readValue(response.getEntity().getContent(), RerankResult.class);
+//          } catch (Exception ex) {
+//            LOGGER.error("Exception executing request.", ex);
+//            return null;
+//          } finally {
+//            if (response != null) {
+//              try {
+//                response.close();
+//              } catch (IOException e) {
+//                LOGGER.error("Exception closing response.", e);
+//              }
+//            }
+//          }
+//        });
+//  }
+
 }

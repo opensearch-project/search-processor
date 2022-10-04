@@ -7,15 +7,29 @@
  */
 package org.opensearch.search.relevance.model.dto;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+
 import java.util.List;
 
+@JsonNaming(PropertyNamingStrategies.UpperCamelCaseStrategy.class)
 public class RerankRequest {
+  private String rerankingEndpointId;
   private String queryText;
-  private List<OriginalHit> originalHits;
+  private List<Document> documents;
 
-  public RerankRequest(String queryText, List<OriginalHit> originalHits) {
+  public RerankRequest(String rerankingEndpointId, String queryText, List<Document> documents) {
+    this.rerankingEndpointId = rerankingEndpointId;
     this.queryText = queryText;
-    this.originalHits = originalHits;
+    this.documents = documents;
+  }
+
+  public String getRerankingEndpointId() {
+    return rerankingEndpointId;
+  }
+
+  public void setRerankingEndpointId(String rerankingEndpointId) {
+    this.rerankingEndpointId = rerankingEndpointId;
   }
 
   public String getQueryText() {
@@ -26,11 +40,11 @@ public class RerankRequest {
     this.queryText = queryText;
   }
 
-  public List<OriginalHit> getOriginalHits() {
-    return originalHits;
+  public List<Document> getDocuments() {
+    return documents;
   }
 
-  public void setOriginalHits(List<OriginalHit> originalHits) {
-    this.originalHits = originalHits;
+  public void setDocuments(List<Document> documents) {
+    this.documents = documents;
   }
 }

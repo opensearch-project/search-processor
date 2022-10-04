@@ -30,8 +30,8 @@ import org.opensearch.plugins.Plugin;
 import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.script.ScriptService;
 import org.opensearch.search.relevance.actionfilter.SearchActionFilter;
-import org.opensearch.search.relevance.client.KendraClient;
 import org.opensearch.search.relevance.client.KendraClientSettings;
+import org.opensearch.search.relevance.client.KendraHttpClient;
 import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.constants.Constants;
 import org.opensearch.threadpool.ThreadPool;
@@ -40,7 +40,7 @@ import org.opensearch.watcher.ResourceWatcherService;
 public class SemanticRerankerPlugin extends Plugin implements ActionPlugin {
 
   private OpenSearchClient openSearchClient;
-  private KendraClient kendraClient;
+  private KendraHttpClient kendraClient;
   
   @Override
   public List<ActionFilter> getActionFilters() {
@@ -58,6 +58,8 @@ public class SemanticRerankerPlugin extends Plugin implements ActionPlugin {
     settings.add(KendraClientSettings.SECRET_KEY_SETTING);
     settings.add(KendraClientSettings.SESSION_TOKEN_SETTING);
     // Following settings are stored in opensearch.yml
+    settings.add(KendraClientSettings.SERVICE_ENDPOINT_SETTING);
+    settings.add(KendraClientSettings.SERVICE_REGION_SETTING);
     settings.add(KendraClientSettings.ENDPOINT_ID_SETTING);
     return settings;
   }
@@ -78,7 +80,7 @@ public class SemanticRerankerPlugin extends Plugin implements ActionPlugin {
   ) {
     this.openSearchClient = new OpenSearchClient(client);
     
-    this.kendraClient = new KendraClient(KendraClientSettings.getClientSettings(environment.settings()));
+    this.kendraClient = new KendraHttpClient(KendraClientSettings.getClientSettings(environment.settings()));
     
     return ImmutableList.of(
         this.openSearchClient,

@@ -12,4 +12,5 @@ grant {
   
   permission java.net.SocketPermission "*", "connect,resolve";
   permission java.lang.RuntimePermission "getClassLoader";
+  permission java.util.PropertyPermission "*", "read,write";
 };

@@ -38,6 +38,10 @@ public final class KendraClientSettings {
    * The session token for connecting to Kendra.
    */
   public static final Setting<SecureString> SESSION_TOKEN_SETTING = SecureSetting.secureString("semantic_ranker.kendra.session_token", null);
+
+  public static final Setting<String> SERVICE_ENDPOINT_SETTING = Setting.simpleString("semantic_ranker.kendra.service_endpoint", Setting.Property.NodeScope);
+
+  public static final Setting<String> SERVICE_REGION_SETTING = Setting.simpleString("semantic_ranker.kendra.service_region", Setting.Property.NodeScope);
   
   public static final Setting<String> ENDPOINT_ID_SETTING = Setting.simpleString("semantic_ranker.kendra.endpoint_id", Setting.Property.NodeScope);
 
@@ -47,10 +51,14 @@ public final class KendraClientSettings {
    * Credentials to authenticate with Kendra.
    */
   private final AWSCredentials credentials;
+  private final String serviceEndpoint;
+  private final String serviceRegion;
   private final String endpointId;
 
-  protected KendraClientSettings(AWSCredentials credentials, String endpointId) {
+  protected KendraClientSettings(AWSCredentials credentials, String serviceEndpoint, String serviceRegion, String endpointId) {
     this.credentials = credentials;
+    this.serviceEndpoint = serviceEndpoint;
+    this.serviceRegion = serviceRegion;
     this.endpointId = endpointId;
   }
 
@@ -60,6 +68,14 @@ public final class KendraClientSettings {
 
   public String getEndpointId() {
     return endpointId;
+  }
+
+  public String getServiceEndpoint() {
+    return serviceEndpoint;
+  }
+
+  public String getServiceRegion() {
+    return serviceRegion;
   }
 
   static AWSCredentials loadCredentials(Settings settings) {
@@ -96,7 +112,12 @@ public final class KendraClientSettings {
    */
   public static KendraClientSettings getClientSettings(Settings settings) {
     final AWSCredentials credentials = loadCredentials(settings);
-    return new KendraClientSettings(credentials, ENDPOINT_ID_SETTING.get(settings));
+    return new KendraClientSettings(
+        credentials,
+        SERVICE_ENDPOINT_SETTING.get(settings),
+        SERVICE_REGION_SETTING.get(settings),
+        ENDPOINT_ID_SETTING.get(settings)
+    );
   }
 
 }
