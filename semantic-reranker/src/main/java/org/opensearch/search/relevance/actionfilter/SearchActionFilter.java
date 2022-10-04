@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
+import java.util.stream.Collectors;
 
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
@@ -41,6 +42,7 @@ import org.opensearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.opensearch.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.common.settings.Settings;
+import org.opensearch.search.SearchExtBuilder;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
@@ -48,6 +50,7 @@ import org.opensearch.search.internal.InternalSearchResponse;
 import org.opensearch.search.profile.SearchProfileShardResults;
 import org.opensearch.search.relevance.client.KendraHttpClient;
 import org.opensearch.search.relevance.client.OpenSearchClient;
+import org.opensearch.search.relevance.control.KendraSearchExtBuilder;
 import org.opensearch.search.relevance.constants.Constants;
 import org.opensearch.search.relevance.model.PassageScore;
 import org.opensearch.search.relevance.model.dto.Document;
@@ -163,7 +166,20 @@ public class SearchActionFilter implements ActionFilter {
     if (indices == null || indices.length != 1) {
       return false;
     }
-    
+
+    // Check request-level setting
+    if (!searchRequest.source().ext().isEmpty()) {
+      // Filter ext builders by name
+      List<SearchExtBuilder> extBuilders = searchRequest.source().ext().stream()
+          .filter(searchExtBuilder -> KendraSearchExtBuilder.NAME.equals(searchExtBuilder.getWriteableName()))
+          .collect(Collectors.toList());
+      if (!extBuilders.isEmpty()) {
+        KendraSearchExtBuilder kendraSearchExtBuilder = (KendraSearchExtBuilder) extBuilders.get(0);
+        return kendraSearchExtBuilder.isRankerEnabled();
+      }
+    }
+
+    // Check index level setting
     Settings settings = openSearchClient.getIndexSettings(indices[0], new String[] { Constants.ENABLED_SETTING_NAME });
     // Skip if plugin enabled flag is not true.
     if (settings == null || !TRUE.equals(settings.get(Constants.ENABLED_SETTING_NAME))) {
