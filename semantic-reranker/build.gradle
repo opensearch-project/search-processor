@@ -8,11 +8,11 @@ apply plugin: 'opensearch.pluginzip'
 
 group = 'org.opensearch'
 
-def pluginName = 'semantic-reranker'
+def pluginName = 'kendra-intelligent-ranking'
 def pluginDescription = 'Make Opensearch results more relevant.'
 def projectPath = 'org.opensearch'
 def pathToPlugin = 'search.relevance'
-def pluginClassName = 'SemanticRerankerPlugin'
+def pluginClassName = 'KendraIntelligentRankingPlugin'
 
 publishing {
     publications {

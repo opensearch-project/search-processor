@@ -40,7 +40,7 @@ import org.opensearch.search.relevance.constants.Constants;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.watcher.ResourceWatcherService;
 
-public class SemanticRerankerPlugin extends Plugin implements ActionPlugin, SearchPlugin {
+public class KendraIntelligentRankingPlugin extends Plugin implements ActionPlugin, SearchPlugin {
 
   private OpenSearchClient openSearchClient;
   private KendraHttpClient kendraClient;

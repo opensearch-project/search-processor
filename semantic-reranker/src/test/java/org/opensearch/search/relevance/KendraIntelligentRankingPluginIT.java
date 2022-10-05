@@ -22,11 +22,11 @@ import static org.hamcrest.Matchers.containsString;
 
 @ThreadLeakScope(ThreadLeakScope.Scope.NONE)
 @OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE)
-public class SemanticRerankerPluginIT extends OpenSearchIntegTestCase {
+public class KendraIntelligentRankingPluginIT extends OpenSearchIntegTestCase {
 
     @Override
     protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return Collections.singletonList(SemanticRerankerPlugin.class);
+        return Collections.singletonList(KendraIntelligentRankingPlugin.class);
     }
 
     public void testPluginInstalled() throws IOException {
@@ -34,6 +34,6 @@ public class SemanticRerankerPluginIT extends OpenSearchIntegTestCase {
         String body = EntityUtils.toString(response.getEntity());
 
         logger.info("response body: {}", body);
-        assertThat(body, containsString("semantic-reranker"));
+        assertThat(body, containsString("kendra-intelligent-ranking"));
     }
 }

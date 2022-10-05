@@ -5,4 +5,4 @@
         h: component
 
   - match:
-      $body: /^semantic-reranker\n$/
+      $body: /^kendra-intelligent-ranking\n$/

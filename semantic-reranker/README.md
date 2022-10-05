@@ -1,1 +1,1 @@
-# Semantic Reranker
+# Kendra Intelligent Ranking
