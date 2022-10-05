@@ -281,10 +281,10 @@ public class SearchActionFilter implements ActionFilter {
         LOGGER.info("Splitting document source into passages");
         List<String> splitPassages = slidingWindowTextSplitter.split(docSourceMap.get(queryParserResult.getBodyFieldName()).toString());
         LOGGER.info("Split document source into {} passages: {}", splitPassages.size(), splitPassages);
-        List<String> topPassages = getTopPassages(queryParserResult.getQueryText(), splitPassages);
+        List<List<String>> topPassages = getTopPassages(queryParserResult.getQueryText(), splitPassages);
         LOGGER.info("Top passages {}", topPassages);
         originalHits.add(
-            new Document(searchHit.getId(), "title", topPassages, null, Arrays.asList(Arrays.asList("passage")), searchHit.getScore())
+            new Document(searchHit.getId(), null, null, null, topPassages, searchHit.getScore())
         );
       }
 
@@ -318,7 +318,7 @@ public class SearchActionFilter implements ActionFilter {
     }
   }
 
-  private List<String> getTopPassages(final String queryText, final List<String> splitPassages) {
+  private List<List<String>> getTopPassages(final String queryText, final List<String> splitPassages) {
     List<String> query = textTokenizer.tokenize(queryText);
     List<List<String>> passages = textTokenizer.tokenize(splitPassages);
     BM25Scorer bm25Scorer = new BM25Scorer(BM25_B_VALUE, BM25_K1_VALUE, passages);
@@ -334,9 +334,9 @@ public class SearchActionFilter implements ActionFilter {
       }
     }
 
-    List<String> topPassages = new ArrayList<>();
+    List<List<String>> topPassages = new ArrayList<>();
     while (!pq.isEmpty()) {
-      topPassages.add(splitPassages.get(pq.poll().getIndex()));
+      topPassages.add(passages.get(pq.poll().getIndex()));
     }
     Collections.reverse(topPassages); // reverse to order from highest to lowest score
     return topPassages;
