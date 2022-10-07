@@ -25,18 +25,18 @@ public class SlidingWindowTextSplitter {
    * Minimum size of window of text to be selected in a split. Window size can be larger
    * in practice because of respecting sentence boundaries.
    */
-  private Integer windowSize;
+  private int windowSize;
 
   /**
    * The minimum step size by which to move the sliding window after a split. Step size can be larger
    * in practice because of respecting sentence boundaries.
    */
-  private Integer stepSize;
+  private int stepSize;
 
   /**
    * The maximum number of passages to be extracted from the input text
    */
-  private Integer maximumPassages;
+  private int maximumPassages;
 
   //local parameters to control sentence/token iteration
   private Pair<Integer, Integer> lastSentenceBoundary;
@@ -54,7 +54,7 @@ public class SlidingWindowTextSplitter {
    * @param updatedWindowSize text window size
    * @param updatedStepSize step size to move the window
    */
-  public void setSlidingWindow(Integer updatedWindowSize, Integer updatedStepSize) {
+  public void setSlidingWindow(int updatedWindowSize, int updatedStepSize) {
     if (updatedStepSize > updatedWindowSize) {
       throw new IllegalArgumentException("Step size " + updatedStepSize + " is larger than window size " + updatedWindowSize);
     }

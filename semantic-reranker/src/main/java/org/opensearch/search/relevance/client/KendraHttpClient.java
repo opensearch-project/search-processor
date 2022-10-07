@@ -46,9 +46,6 @@ public class KendraHttpClient {
   private final ObjectMapper objectMapper;
 
   public KendraHttpClient(KendraClientSettings clientSettings) {
-    // TODO: remove below line once DNS is fixed
-    AccessController.doPrivileged((PrivilegedAction<String>) () -> System.setProperty(SDKGlobalConfiguration.DISABLE_CERT_CHECKING_SYSTEM_PROPERTY, "true"));
-    
     amazonHttpClient = AccessController.doPrivileged((PrivilegedAction<AmazonHttpClient>) () -> new AmazonHttpClient(new ClientConfiguration()));
     errorHandler = new SimpleAwsErrorHandler();
     responseHandler = new SimpleResponseHandler();
@@ -65,14 +62,10 @@ public class KendraHttpClient {
     return AccessController.doPrivileged((PrivilegedAction<RerankResult>) () -> {
       try {
         rerankRequest.setRerankingEndpointId(endpointId);
-        System.out.println(rerankRequest.getRerankingEndpointId());
-        System.out.println(rerankRequest.getDocuments());
-        System.out.println(rerankRequest.getQueryText());
         Request<Void> request = new DefaultRequest<>(aws4Signer.getServiceName());
         request.setHttpMethod(HttpMethodName.POST);
         request.setEndpoint(URI.create(serviceEndpoint));
         request.setHeaders(Map.of("Content-Type", "application/x-amz-json-1.0", "X-Amz-Target", "AWSKendraRerankingFrontendService.Rerank"));
-        System.out.println("objectMapper: " + objectMapper.writeValueAsString(rerankRequest));
         request.setContent(new ByteArrayInputStream(objectMapper.writeValueAsString(rerankRequest).getBytes(StandardCharsets.UTF_8)));
         aws4Signer.sign(request, awsCredentials);
 

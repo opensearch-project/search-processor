@@ -37,6 +37,8 @@ import org.opensearch.search.relevance.client.KendraHttpClient;
 import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.control.KendraSearchExtBuilder;
 import org.opensearch.search.relevance.constants.Constants;
+import org.opensearch.search.relevance.ranker.KendraIntelligentRanker;
+import org.opensearch.search.relevance.ranker.Ranker;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.watcher.ResourceWatcherService;
 
@@ -44,10 +46,11 @@ public class KendraIntelligentRankingPlugin extends Plugin implements ActionPlug
 
   private OpenSearchClient openSearchClient;
   private KendraHttpClient kendraClient;
+  private Ranker ranker;
   
   @Override
   public List<ActionFilter> getActionFilters() {
-    return Arrays.asList(new SearchActionFilter(this.openSearchClient, this.kendraClient));
+    return Arrays.asList(new SearchActionFilter(this.ranker));
   }
   
   @Override
@@ -82,12 +85,13 @@ public class KendraIntelligentRankingPlugin extends Plugin implements ActionPlug
       Supplier<RepositoriesService> repositoriesServiceSupplier
   ) {
     this.openSearchClient = new OpenSearchClient(client);
-    
     this.kendraClient = new KendraHttpClient(KendraClientSettings.getClientSettings(environment.settings()));
+    this.ranker = new KendraIntelligentRanker(this.openSearchClient, this.kendraClient);
     
     return ImmutableList.of(
         this.openSearchClient,
-        this.kendraClient
+        this.kendraClient,
+        this.ranker
     );
   }
 

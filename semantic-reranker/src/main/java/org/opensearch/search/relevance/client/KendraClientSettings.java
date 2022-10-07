@@ -109,6 +109,8 @@ public final class KendraClientSettings {
 
   /**
    * Parse settings for a single client.
+   * @param settings a {@link Settings} instance from which to derive the endpoint settings
+   * @return KendraClientSettings comprising credentials and endpoint settings
    */
   public static KendraClientSettings getClientSettings(Settings settings) {
     final AWSCredentials credentials = loadCredentials(settings);

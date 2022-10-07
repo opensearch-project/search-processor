@@ -13,6 +13,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class TextTokenizer {
@@ -25,6 +26,7 @@ public class TextTokenizer {
           "on", "off", "over", "under", "again", "further", "then", "once", "here", "there", "when", "where", "why", "how", "all", "any", "both",
           "each", "few", "more", "most", "other", "some", "such", "no", "nor", "not", "only", "own", "same", "so", "than", "too", "very", "s", "t",
           "can", "will", "just", "don", "should", "now"));
+  private static final Pattern SPLIT_PATTERN = Pattern.compile("[\\p{Punct}\\s]+");
 
   public List<List<String>> tokenize(List<String> texts) {
     return texts.stream()
@@ -33,7 +35,7 @@ public class TextTokenizer {
   }
 
   public List<String> tokenize(String text) {
-    String[] tokens = text.split("[\\p{Punct}\\s]+");
+    String[] tokens = text.split(SPLIT_PATTERN.pattern());
     List<String> validTokens = new ArrayList<>();
     for (String token : tokens) {
       if (token.length() == 0) {
