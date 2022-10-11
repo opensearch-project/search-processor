@@ -27,23 +27,25 @@ public final class KendraClientSettings {
   /**
    * The access key (ie login id) for connecting to Kendra.
    */
-  public static final Setting<SecureString> ACCESS_KEY_SETTING = SecureSetting.secureString("semantic_ranker.kendra.access_key", null);
+  public static final Setting<SecureString> ACCESS_KEY_SETTING = SecureSetting.secureString("kendra_intelligent_ranking.aws.access_key", null);
 
   /**
    * The secret key (ie password) for connecting to Kendra.
    */
-  public static final Setting<SecureString> SECRET_KEY_SETTING = SecureSetting.secureString("semantic_ranker.kendra.secret_key", null);
+  public static final Setting<SecureString> SECRET_KEY_SETTING = SecureSetting.secureString("kendra_intelligent_ranking.aws.secret_key", null);
 
   /**
    * The session token for connecting to Kendra.
    */
-  public static final Setting<SecureString> SESSION_TOKEN_SETTING = SecureSetting.secureString("semantic_ranker.kendra.session_token", null);
+  public static final Setting<SecureString> SESSION_TOKEN_SETTING = SecureSetting.secureString("kendra_intelligent_ranking.aws.session_token", null);
 
-  public static final Setting<String> SERVICE_ENDPOINT_SETTING = Setting.simpleString("semantic_ranker.kendra.service_endpoint", Setting.Property.NodeScope);
+  public static final Setting<String> SERVICE_ENDPOINT_SETTING = Setting.simpleString("kendra_intelligent_ranking.service.endpoint", Setting.Property.NodeScope);
 
-  public static final Setting<String> SERVICE_REGION_SETTING = Setting.simpleString("semantic_ranker.kendra.service_region", Setting.Property.NodeScope);
+  public static final Setting<String> SERVICE_REGION_SETTING = Setting.simpleString("kendra_intelligent_ranking.service.region", Setting.Property.NodeScope);
   
-  public static final Setting<String> ENDPOINT_ID_SETTING = Setting.simpleString("semantic_ranker.kendra.endpoint_id", Setting.Property.NodeScope);
+  public static final Setting<String> ENDPOINT_ID_SETTING = Setting.simpleString("kendra_intelligent_ranking.service.resource_endpoint_id", Setting.Property.NodeScope);
+  
+  public static final Setting<String> ASSUME_ROLE_ARN_SETTING = Setting.simpleString("kendra_intelligent_ranking.service.assume_role_arn", Setting.Property.NodeScope);
 
   private static final Logger logger = LogManager.getLogger(KendraClientSettings.class);
 
@@ -54,12 +56,14 @@ public final class KendraClientSettings {
   private final String serviceEndpoint;
   private final String serviceRegion;
   private final String endpointId;
+  private final String assumeRoleArn;
 
-  protected KendraClientSettings(AWSCredentials credentials, String serviceEndpoint, String serviceRegion, String endpointId) {
+  protected KendraClientSettings(AWSCredentials credentials, String serviceEndpoint, String serviceRegion, String endpointId, String assumeRoleArn) {
     this.credentials = credentials;
     this.serviceEndpoint = serviceEndpoint;
     this.serviceRegion = serviceRegion;
     this.endpointId = endpointId;
+    this.assumeRoleArn = assumeRoleArn;
   }
 
   public AWSCredentials getCredentials() {
@@ -76,6 +80,10 @@ public final class KendraClientSettings {
 
   public String getServiceRegion() {
     return serviceRegion;
+  }
+
+  public String getAssumeRoleArn() {
+    return assumeRoleArn;
   }
 
   static AWSCredentials loadCredentials(Settings settings) {
@@ -118,7 +126,8 @@ public final class KendraClientSettings {
         credentials,
         SERVICE_ENDPOINT_SETTING.get(settings),
         SERVICE_REGION_SETTING.get(settings),
-        ENDPOINT_ID_SETTING.get(settings)
+        ENDPOINT_ID_SETTING.get(settings),
+        ASSUME_ROLE_ARN_SETTING.get(settings)
     );
   }
 

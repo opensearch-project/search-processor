@@ -67,6 +67,7 @@ public class KendraIntelligentRankingPlugin extends Plugin implements ActionPlug
     settings.add(KendraClientSettings.SERVICE_ENDPOINT_SETTING);
     settings.add(KendraClientSettings.SERVICE_REGION_SETTING);
     settings.add(KendraClientSettings.ENDPOINT_ID_SETTING);
+    settings.add(KendraClientSettings.ASSUME_ROLE_ARN_SETTING);
     return settings;
   }
   

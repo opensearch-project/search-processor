@@ -12,13 +12,18 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.DefaultRequest;
 import com.amazonaws.Request;
 import com.amazonaws.Response;
-import com.amazonaws.SDKGlobalConfiguration;
 import com.amazonaws.auth.AWS4Signer;
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.AWSStaticCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
+import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.amazonaws.http.AmazonHttpClient;
 import com.amazonaws.http.ExecutionContext;
 import com.amazonaws.http.HttpMethodName;
 import com.amazonaws.http.HttpResponseHandler;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
+import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -38,11 +43,10 @@ public class KendraHttpClient {
   private final AmazonHttpClient amazonHttpClient;
   private final HttpResponseHandler<AmazonServiceException> errorHandler;
   private final HttpResponseHandler<String> responseHandler;
-  private final AWSCredentials awsCredentials;
+  private final AWSCredentialsProvider awsCredentialsProvider;
   private final AWS4Signer aws4Signer;
   private final String serviceEndpoint;
   private final String endpointId;
-
   private final ObjectMapper objectMapper;
 
   public KendraHttpClient(KendraClientSettings clientSettings) {
@@ -53,9 +57,36 @@ public class KendraHttpClient {
     aws4Signer.setServiceName(Constants.KENDRA_RANKING_SERVICE_NAME);
     aws4Signer.setRegionName(clientSettings.getServiceRegion());
     objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    awsCredentials = clientSettings.getCredentials();
     serviceEndpoint = clientSettings.getServiceEndpoint();
     endpointId = clientSettings.getEndpointId();
+
+    final AWSCredentialsProvider credentialsProvider;
+    final AWSCredentials credentials = clientSettings.getCredentials();
+    if (credentials == null) {
+      // Use environment variables, system properties or instance profile credentials.
+      credentialsProvider = DefaultAWSCredentialsProviderChain.getInstance();
+    } else {
+      // Use keystore credentials.
+      credentialsProvider = new AWSStaticCredentialsProvider(credentials);
+    }
+
+    final String assumeRoleArn = clientSettings.getAssumeRoleArn();
+    if (assumeRoleArn != null && !assumeRoleArn.isBlank()) {
+      // If AssumeRoleArn was provided in config, use auto-refreshed role credentials.
+      awsCredentialsProvider = AccessController.doPrivileged(
+          (PrivilegedAction<AWSCredentialsProvider>) () -> {
+            AWSSecurityTokenService awsSecurityTokenService = AWSSecurityTokenServiceClientBuilder.standard()
+                .withCredentials(credentialsProvider)
+                .withRegion(clientSettings.getServiceRegion())
+                .build();
+
+            return new STSAssumeRoleSessionCredentialsProvider.Builder(clientSettings.getAssumeRoleArn(), Constants.ASSUME_ROLE_SESSION_NAME)
+                .withStsClient(awsSecurityTokenService)
+                .build();
+          });
+    } else {
+      awsCredentialsProvider = credentialsProvider;
+    }
   }
 
   public RerankResult rerank(RerankRequest rerankRequest) {
@@ -67,7 +98,7 @@ public class KendraHttpClient {
         request.setEndpoint(URI.create(serviceEndpoint));
         request.setHeaders(Map.of("Content-Type", "application/x-amz-json-1.0", "X-Amz-Target", "AWSKendraRerankingFrontendService.Rerank"));
         request.setContent(new ByteArrayInputStream(objectMapper.writeValueAsString(rerankRequest).getBytes(StandardCharsets.UTF_8)));
-        aws4Signer.sign(request, awsCredentials);
+        aws4Signer.sign(request, awsCredentialsProvider.getCredentials());
 
         Response<String> rsp = amazonHttpClient
             .requestExecutionBuilder()

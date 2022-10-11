@@ -14,4 +14,5 @@ public class Constants {
   public static final String ENABLED_SETTING_NAME = String.join(".",PLUGIN_INDEX_SETTINGS_PREFIX, ENABLED_FIELD_NAME);
 
   public static final String KENDRA_RANKING_SERVICE_NAME = "kendrareranking";
+  public static final String ASSUME_ROLE_SESSION_NAME = "OpenSearchKendraIntelligentRankingPluginSession";
 }
