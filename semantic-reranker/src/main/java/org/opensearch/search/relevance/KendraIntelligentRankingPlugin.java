@@ -7,6 +7,16 @@
  */
 package org.opensearch.search.relevance;
 
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.ACCESS_KEY_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.ASSUME_ROLE_ARN_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.BODY_FIELD_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.ENDPOINT_ID_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.RANKER_ENABLED_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.SECRET_KEY_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.SERVICE_ENDPOINT_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.SERVICE_REGION_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.SESSION_TOKEN_SETTING;
+
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -23,6 +33,8 @@ import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Setting.Property;
+import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.NamedXContentRegistry;
 import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
@@ -55,20 +67,20 @@ public class KendraIntelligentRankingPlugin extends Plugin implements ActionPlug
   
   @Override
   public List<Setting<?>> getSettings() {
-    List<Setting<?>> settings = new ArrayList<>();
-    // Following settings are stored in index settings
-    settings.add(new Setting<>(Constants.ENABLED_SETTING_NAME, "", Function.identity(),
-        Setting.Property.Dynamic, Setting.Property.IndexScope));
-    // Following settings are stored in opensearch.keystore
-    settings.add(KendraClientSettings.ACCESS_KEY_SETTING);
-    settings.add(KendraClientSettings.SECRET_KEY_SETTING);
-    settings.add(KendraClientSettings.SESSION_TOKEN_SETTING);
-    // Following settings are stored in opensearch.yml
-    settings.add(KendraClientSettings.SERVICE_ENDPOINT_SETTING);
-    settings.add(KendraClientSettings.SERVICE_REGION_SETTING);
-    settings.add(KendraClientSettings.ENDPOINT_ID_SETTING);
-    settings.add(KendraClientSettings.ASSUME_ROLE_ARN_SETTING);
-    return settings;
+    return ImmutableList.of(
+        // Following settings are stored in index settings
+        RANKER_ENABLED_SETTING,
+        BODY_FIELD_SETTING,
+        // Following settings are stored in opensearch.keystore
+        ACCESS_KEY_SETTING,
+        SECRET_KEY_SETTING,
+        SESSION_TOKEN_SETTING,
+        // Following settings are stored in opensearch.yml
+        SERVICE_ENDPOINT_SETTING,
+        SERVICE_REGION_SETTING,
+        ENDPOINT_ID_SETTING,
+        ASSUME_ROLE_ARN_SETTING
+    );
   }
   
   @Override

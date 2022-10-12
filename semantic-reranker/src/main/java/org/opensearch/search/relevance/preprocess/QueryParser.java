@@ -7,17 +7,33 @@
  */
 package org.opensearch.search.relevance.preprocess;
 
+import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.opensearch.index.query.MatchQueryBuilder;
 import org.opensearch.index.query.QueryBuilder;
+import org.opensearch.search.relevance.constants.Constants;
 
 public class QueryParser {
+  private static final Logger logger = LogManager.getLogger(QueryParser.class);
 
-  public QueryParserResult parse(QueryBuilder query) {
+  public QueryParserResult parse(final QueryBuilder query, final List<String> bodyFieldSetting) {
+    final String bodyFieldFromSetting = bodyFieldSetting.isEmpty() ? null : bodyFieldSetting.get(0);
+    QueryParserResult result = null;
+
     if (query instanceof MatchQueryBuilder) {
       MatchQueryBuilder matchQuery = (MatchQueryBuilder) query;
-      return new QueryParserResult(matchQuery.value().toString(), matchQuery.fieldName());
+      if (bodyFieldFromSetting != null && !bodyFieldFromSetting.equals(matchQuery.fieldName())) {
+        logger.warn("Body field in query [" + matchQuery.fieldName() + "] is different from body field setting [" +
+            bodyFieldFromSetting + "]. Will not apply Kendra Intelligent Ranking");
+      } else {
+        result = new QueryParserResult(matchQuery.value().toString(), matchQuery.fieldName());
+      }
+    } else {
+      logger.warn(Constants.PLUGIN_NAME + " does not support query type [" +
+          query.queryName() + "]. Will not apply Kendra Intelligent Ranking.");
     }
-    return null;
+    return result;
   }
 
   public class QueryParserResult {

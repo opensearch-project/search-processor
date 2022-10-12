@@ -7,15 +7,21 @@
  */
 package org.opensearch.search.relevance.client;
 
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.ACCESS_KEY_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.ASSUME_ROLE_ARN_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.ENDPOINT_ID_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.SECRET_KEY_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.SERVICE_ENDPOINT_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.SERVICE_REGION_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.SESSION_TOKEN_SETTING;
+
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.auth.BasicSessionCredentials;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opensearch.common.settings.SecureSetting;
 import org.opensearch.common.settings.SecureString;
-import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.settings.SettingsException;
 
@@ -23,29 +29,6 @@ import org.opensearch.common.settings.SettingsException;
  * A container for settings used to create a Kendra client.
  */
 public final class KendraClientSettings {
-
-  /**
-   * The access key (ie login id) for connecting to Kendra.
-   */
-  public static final Setting<SecureString> ACCESS_KEY_SETTING = SecureSetting.secureString("kendra_intelligent_ranking.aws.access_key", null);
-
-  /**
-   * The secret key (ie password) for connecting to Kendra.
-   */
-  public static final Setting<SecureString> SECRET_KEY_SETTING = SecureSetting.secureString("kendra_intelligent_ranking.aws.secret_key", null);
-
-  /**
-   * The session token for connecting to Kendra.
-   */
-  public static final Setting<SecureString> SESSION_TOKEN_SETTING = SecureSetting.secureString("kendra_intelligent_ranking.aws.session_token", null);
-
-  public static final Setting<String> SERVICE_ENDPOINT_SETTING = Setting.simpleString("kendra_intelligent_ranking.service.endpoint", Setting.Property.NodeScope);
-
-  public static final Setting<String> SERVICE_REGION_SETTING = Setting.simpleString("kendra_intelligent_ranking.service.region", Setting.Property.NodeScope);
-  
-  public static final Setting<String> ENDPOINT_ID_SETTING = Setting.simpleString("kendra_intelligent_ranking.service.resource_endpoint_id", Setting.Property.NodeScope);
-  
-  public static final Setting<String> ASSUME_ROLE_ARN_SETTING = Setting.simpleString("kendra_intelligent_ranking.service.assume_role_arn", Setting.Property.NodeScope);
 
   private static final Logger logger = LogManager.getLogger(KendraClientSettings.class);
 

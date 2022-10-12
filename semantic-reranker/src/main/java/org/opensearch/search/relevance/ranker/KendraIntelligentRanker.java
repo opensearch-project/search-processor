@@ -43,6 +43,7 @@ import org.opensearch.search.relevance.preprocess.TextTokenizer;
 
 public class KendraIntelligentRanker implements Ranker {
 
+  private static final String[] SETTING_NAMES = new String[] {Constants.ENABLED_SETTING_NAME, Constants.BODY_FIELD_SETTING_NAME};
   private static final String TRUE = "true";
   private static final int PASSAGE_SIZE_LIMIT = 600;
   private static final int SLIDING_WINDOW_STEP = PASSAGE_SIZE_LIMIT - 50;
@@ -59,6 +60,8 @@ public class KendraIntelligentRanker implements Ranker {
   private final TextTokenizer textTokenizer;
   private final CloseableHttpClient httpClient;
   private final QueryParser queryParser;
+  private Settings settings;
+  private KendraSearchExtBuilder extBuilder;
 
   public KendraIntelligentRanker(OpenSearchClient openSearchClient,
       KendraHttpClient kendraClient) {
@@ -68,15 +71,17 @@ public class KendraIntelligentRanker implements Ranker {
     this.textTokenizer = new TextTokenizer();
     this.httpClient = HttpClientBuilder.create().build();
     this.queryParser = new QueryParser();
+    this.settings = null;
+    this.extBuilder = null;
   }
 
   /**
-   *
-   * @param request
-   * @return
+   * Check if search request is eligible for rescore
+   * @param request Search Request
+   * @return boolean decision on whether to re-rank
    */
   @Override
-  public boolean shouldRerank(SearchRequest request) {
+  public boolean shouldRescore(SearchRequest request) {
     if (request.source() == null) {
       return false;
     }
@@ -93,25 +98,48 @@ public class KendraIntelligentRanker implements Ranker {
       return false;
     }
 
-    // Check request-level setting
-    if (!request.source().ext().isEmpty()) {
+    // Fetch request and index level settings
+    fetchKendraSettings(request, indices[0]);
+
+    // Check request level setting, which overrides index level setting
+    if (extBuilder != null) {
+      return extBuilder.isRankerEnabled();
+    }
+
+    // Check index level setting. Skip if plugin enabled flag is not true.
+    if (settings == null || !TRUE.equals(settings.get(Constants.ENABLED_SETTING_NAME))) {
+      return false;
+    }
+    return true;
+  }
+
+  private void fetchKendraSettings(final SearchRequest request, final String index) {
+    // Fetch index level settings
+    settings = openSearchClient.getIndexSettings(index, SETTING_NAMES);
+
+    // Fetch request level settings
+    extBuilder = null;
+    if (request.source().ext() != null && !request.source().ext().isEmpty()) {
       // Filter ext builders by name
       List<SearchExtBuilder> extBuilders = request.source().ext().stream()
           .filter(searchExtBuilder -> KendraSearchExtBuilder.NAME.equals(searchExtBuilder.getWriteableName()))
           .collect(Collectors.toList());
       if (!extBuilders.isEmpty()) {
-        KendraSearchExtBuilder kendraSearchExtBuilder = (KendraSearchExtBuilder) extBuilders.get(0);
-        return kendraSearchExtBuilder.isRankerEnabled();
+        extBuilder = (KendraSearchExtBuilder) extBuilders.get(0);
       }
     }
+  }
 
-    // Check index level setting
-    Settings settings = openSearchClient.getIndexSettings(indices[0], new String[] { Constants.ENABLED_SETTING_NAME });
-    // Skip if plugin enabled flag is not true.
-    if (settings == null || !TRUE.equals(settings.get(Constants.ENABLED_SETTING_NAME))) {
-      return false;
+  @Override
+  public QueryParserResult parseQuery(SearchRequest request) {
+    List<String> bodyFieldSetting = Collections.emptyList();
+    if (extBuilder != null && extBuilder.bodyField() != null) {
+      bodyFieldSetting = extBuilder.bodyField();
+    } else if (settings != null && settings.getAsList(Constants.BODY_FIELD_SETTING_NAME) != null) {
+      bodyFieldSetting = settings.getAsList(Constants.BODY_FIELD_SETTING_NAME);
     }
-    return true;
+
+    return queryParser.parse(request.source().query(), bodyFieldSetting);
   }
 
   /**
@@ -121,7 +149,7 @@ public class KendraIntelligentRanker implements Ranker {
    * @return SearchHits reranked search hits
    */
   @Override
-  public SearchHits rank(final SearchHits hits,
+  public SearchHits rescore(final SearchHits hits,
       QueryParserResult queryParserResult) {
     try {
       List<Document> originalHits = new ArrayList<>();

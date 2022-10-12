@@ -37,6 +37,7 @@ import org.opensearch.search.aggregations.InternalAggregations;
 import org.opensearch.search.internal.InternalSearchResponse;
 import org.opensearch.search.profile.SearchProfileShardResults;
 import org.opensearch.search.relevance.preprocess.QueryParser;
+import org.opensearch.search.relevance.preprocess.QueryParser.QueryParserResult;
 import org.opensearch.search.relevance.ranker.Ranker;
 import org.opensearch.search.suggest.Suggest;
 import org.opensearch.tasks.Task;
@@ -80,7 +81,7 @@ public class SearchActionFilter implements ActionFilter {
 
     final SearchRequest searchRequest = (SearchRequest) request;
 
-    boolean shouldRerank = this.ranker.shouldRerank(searchRequest);
+    boolean shouldRerank = this.ranker.shouldRescore(searchRequest);
     if (shouldRerank) {
       // Source is returned in response hits by default. If disabled by the user, overwrite and enable
       // in order to access document contents for reranking, then suppress at response time.
@@ -91,7 +92,7 @@ public class SearchActionFilter implements ActionFilter {
       }
 
       // Extract query string from request
-      final QueryParser.QueryParserResult queryParserResult = queryParser.parse(searchRequest.source().query());
+      final QueryParserResult queryParserResult = ranker.parseQuery(searchRequest);
       if (queryParserResult != null) {
         final ActionListener<Response> searchResponseListener = createSearchResponseListener(
             listener, startTime, queryParserResult, suppressSourceOnResponse);
@@ -120,7 +121,7 @@ public class SearchActionFilter implements ActionFilter {
           return;
         }
 
-        logger.info("Starting re-ranking for search response: {}", searchResponse);
+        logger.info("Starting re-ranking for search response: {}, parsed query: {}", searchResponse, queryParserResult);
         try {
           final BytesStreamOutput out = new BytesStreamOutput();
           searchResponse.writeTo(out);
@@ -128,7 +129,7 @@ public class SearchActionFilter implements ActionFilter {
           final StreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), namedWriteableRegistry);
 
           final SearchHits hits = new SearchHits(in);
-          SearchHits newHits = ranker.rank(hits, queryParserResult);
+          SearchHits newHits = ranker.rescore(hits, queryParserResult);
           if (suppressSourceOnResponse) {
             List<SearchHit> hitsWithModifiedSource = Arrays.stream(newHits.getHits())
                 .map(hit -> hit.sourceRef(null))
