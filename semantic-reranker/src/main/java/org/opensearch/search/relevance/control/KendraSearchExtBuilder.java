@@ -33,7 +33,7 @@ public class KendraSearchExtBuilder extends SearchExtBuilder {
     PARSER.declareStringArray(KendraSearchExtBuilder::setBodyField, BODY_FIELD);
   }
 
-  private boolean rankerEnabled;
+  private Boolean rankerEnabled;
   private List<String> bodyField;
 
   public KendraSearchExtBuilder() {}
@@ -91,11 +91,11 @@ public class KendraSearchExtBuilder extends SearchExtBuilder {
     return Objects.hash(this.getClass(), this.rankerEnabled);
   }
 
-  public boolean isRankerEnabled() {
+  public Boolean isRankerEnabled() {
     return this.rankerEnabled;
   }
 
-  public void setRankerEnabled(boolean rankerEnabled) {
+  public void setRankerEnabled(Boolean rankerEnabled) {
     this.rankerEnabled = rankerEnabled;
   }
 

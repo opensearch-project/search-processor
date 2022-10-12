@@ -102,7 +102,7 @@ public class KendraIntelligentRanker implements Ranker {
     fetchKendraSettings(request, indices[0]);
 
     // Check request level setting, which overrides index level setting
-    if (extBuilder != null) {
+    if (extBuilder != null && extBuilder.isRankerEnabled() != null) {
       return extBuilder.isRankerEnabled();
     }
 
