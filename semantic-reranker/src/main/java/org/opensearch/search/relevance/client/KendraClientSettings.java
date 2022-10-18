@@ -9,7 +9,7 @@ package org.opensearch.search.relevance.client;
 
 import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.ACCESS_KEY_SETTING;
 import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.ASSUME_ROLE_ARN_SETTING;
-import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.ENDPOINT_ID_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.EXECUTION_PLAN_ID_SETTING;
 import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.SECRET_KEY_SETTING;
 import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.SERVICE_ENDPOINT_SETTING;
 import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.SERVICE_REGION_SETTING;
@@ -38,14 +38,14 @@ public final class KendraClientSettings {
   private final AWSCredentials credentials;
   private final String serviceEndpoint;
   private final String serviceRegion;
-  private final String endpointId;
+  private final String executionPlanId;
   private final String assumeRoleArn;
 
-  protected KendraClientSettings(AWSCredentials credentials, String serviceEndpoint, String serviceRegion, String endpointId, String assumeRoleArn) {
+  protected KendraClientSettings(AWSCredentials credentials, String serviceEndpoint, String serviceRegion, String executionPlanId, String assumeRoleArn) {
     this.credentials = credentials;
     this.serviceEndpoint = serviceEndpoint;
     this.serviceRegion = serviceRegion;
-    this.endpointId = endpointId;
+    this.executionPlanId = executionPlanId;
     this.assumeRoleArn = assumeRoleArn;
   }
 
@@ -53,8 +53,8 @@ public final class KendraClientSettings {
     return credentials;
   }
 
-  public String getEndpointId() {
-    return endpointId;
+  public String getExecutionPlanId() {
+    return executionPlanId;
   }
 
   public String getServiceEndpoint() {
@@ -109,7 +109,7 @@ public final class KendraClientSettings {
         credentials,
         SERVICE_ENDPOINT_SETTING.get(settings),
         SERVICE_REGION_SETTING.get(settings),
-        ENDPOINT_ID_SETTING.get(settings),
+        EXECUTION_PLAN_ID_SETTING.get(settings),
         ASSUME_ROLE_ARN_SETTING.get(settings)
     );
   }

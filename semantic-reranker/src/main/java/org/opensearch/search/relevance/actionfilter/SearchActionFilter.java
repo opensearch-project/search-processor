@@ -121,7 +121,7 @@ public class SearchActionFilter implements ActionFilter {
           return;
         }
 
-        logger.info("Starting re-ranking for search response: {}, parsed query: {}", searchResponse, queryParserResult);
+        logger.debug("Starting re-ranking for search response: {}, parsed query: {}", searchResponse, queryParserResult);
         try {
           final BytesStreamOutput out = new BytesStreamOutput();
           searchResponse.writeTo(out);

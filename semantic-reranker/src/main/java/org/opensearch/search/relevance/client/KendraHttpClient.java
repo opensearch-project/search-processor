@@ -36,8 +36,8 @@ import java.security.PrivilegedAction;
 import java.util.Map;
 
 import org.opensearch.search.relevance.constants.Constants;
-import org.opensearch.search.relevance.model.dto.RerankRequest;
-import org.opensearch.search.relevance.model.dto.RerankResult;
+import org.opensearch.search.relevance.model.dto.RescoreRequest;
+import org.opensearch.search.relevance.model.dto.RescoreResult;
 
 public class KendraHttpClient {
   private final AmazonHttpClient amazonHttpClient;
@@ -46,7 +46,7 @@ public class KendraHttpClient {
   private final AWSCredentialsProvider awsCredentialsProvider;
   private final AWS4Signer aws4Signer;
   private final String serviceEndpoint;
-  private final String endpointId;
+  private final String executionPlanId;
   private final ObjectMapper objectMapper;
 
   public KendraHttpClient(KendraClientSettings clientSettings) {
@@ -58,7 +58,7 @@ public class KendraHttpClient {
     aws4Signer.setRegionName(clientSettings.getServiceRegion());
     objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     serviceEndpoint = clientSettings.getServiceEndpoint();
-    endpointId = clientSettings.getEndpointId();
+    executionPlanId = clientSettings.getExecutionPlanId();
 
     final AWSCredentialsProvider credentialsProvider;
     final AWSCredentials credentials = clientSettings.getCredentials();
@@ -89,15 +89,19 @@ public class KendraHttpClient {
     }
   }
 
-  public RerankResult rerank(RerankRequest rerankRequest) {
-    return AccessController.doPrivileged((PrivilegedAction<RerankResult>) () -> {
+  public String getExecutionPlanId() {
+    return executionPlanId;
+  }
+
+  public RescoreResult rescore(RescoreRequest rescoreRequest) {
+    return AccessController.doPrivileged((PrivilegedAction<RescoreResult>) () -> {
       try {
-        rerankRequest.setRerankingEndpointId(endpointId);
         Request<Void> request = new DefaultRequest<>(aws4Signer.getServiceName());
         request.setHttpMethod(HttpMethodName.POST);
         request.setEndpoint(URI.create(serviceEndpoint));
-        request.setHeaders(Map.of("Content-Type", "application/x-amz-json-1.0", "X-Amz-Target", "AWSKendraRerankingFrontendService.Rerank"));
-        request.setContent(new ByteArrayInputStream(objectMapper.writeValueAsString(rerankRequest).getBytes(StandardCharsets.UTF_8)));
+        request.setHeaders(Map.of("Content-Type", "application/x-amz-json-1.0",
+            "X-Amz-Target", "AWSKendraRerankingFrontendService.Rescore"));
+        request.setContent(new ByteArrayInputStream(objectMapper.writeValueAsString(rescoreRequest).getBytes(StandardCharsets.UTF_8)));
         aws4Signer.sign(request, awsCredentialsProvider.getCredentials());
 
         Response<String> rsp = amazonHttpClient
@@ -107,7 +111,7 @@ public class KendraHttpClient {
             .errorResponseHandler(errorHandler)
             .execute(responseHandler);
 
-        return objectMapper.readValue(rsp.getAwsResponse(), RerankResult.class);
+        return objectMapper.readValue(rsp.getAwsResponse(), RescoreResult.class);
       } catch (Exception ex) {
         throw new RuntimeException("Exception executing request.", ex);
       }

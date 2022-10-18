@@ -32,9 +32,9 @@ import org.opensearch.search.relevance.constants.Constants;
 import org.opensearch.search.relevance.control.KendraSearchExtBuilder;
 import org.opensearch.search.relevance.model.PassageScore;
 import org.opensearch.search.relevance.model.dto.Document;
-import org.opensearch.search.relevance.model.dto.RerankRequest;
-import org.opensearch.search.relevance.model.dto.RerankResult;
-import org.opensearch.search.relevance.model.dto.RerankResultItem;
+import org.opensearch.search.relevance.model.dto.RescoreRequest;
+import org.opensearch.search.relevance.model.dto.RescoreResult;
+import org.opensearch.search.relevance.model.dto.RescoreResultItem;
 import org.opensearch.search.relevance.preprocess.BM25Scorer;
 import org.opensearch.search.relevance.preprocess.QueryParser;
 import org.opensearch.search.relevance.preprocess.QueryParser.QueryParserResult;
@@ -56,7 +56,6 @@ public class KendraIntelligentRanker implements Ranker {
 
   private final OpenSearchClient openSearchClient;
   private final KendraHttpClient kendraClient;
-  private final SlidingWindowTextSplitter slidingWindowTextSplitter;
   private final TextTokenizer textTokenizer;
   private final CloseableHttpClient httpClient;
   private final QueryParser queryParser;
@@ -67,7 +66,6 @@ public class KendraIntelligentRanker implements Ranker {
       KendraHttpClient kendraClient) {
     this.openSearchClient = openSearchClient;
     this.kendraClient = kendraClient;
-    this.slidingWindowTextSplitter = new SlidingWindowTextSplitter(PASSAGE_SIZE_LIMIT, SLIDING_WINDOW_STEP, MAXIMUM_PASSAGES);
     this.textTokenizer = new TextTokenizer();
     this.httpClient = HttpClientBuilder.create().build();
     this.queryParser = new QueryParser();
@@ -155,30 +153,33 @@ public class KendraIntelligentRanker implements Ranker {
       List<Document> originalHits = new ArrayList<>();
       for (SearchHit searchHit : hits.getHits()) {
         Map<String, Object> docSourceMap = searchHit.getSourceAsMap();
-        List<String> splitPassages = slidingWindowTextSplitter.split(docSourceMap.get(queryParserResult.getBodyFieldName()).toString());
+        SlidingWindowTextSplitter textSplitter = new SlidingWindowTextSplitter(PASSAGE_SIZE_LIMIT, SLIDING_WINDOW_STEP, MAXIMUM_PASSAGES);
+        List<String> splitPassages = textSplitter.split(docSourceMap.get(queryParserResult.getBodyFieldName()).toString());
         List<List<String>> topPassages = getTopPassages(queryParserResult.getQueryText(), splitPassages);
-        originalHits.add(
-            new Document(searchHit.getId(), null, null, null, topPassages, searchHit.getScore())
-        );
+        for (int i = 0; i < topPassages.size(); i++) {
+          originalHits.add(
+              new Document(searchHit.getId() + "@" + (i + 1), searchHit.getId(), null, topPassages.get(i), searchHit.getScore())
+          );
+        }
       }
 
-      final RerankRequest rerankRequest = new RerankRequest(null, queryParserResult.getQueryText(), originalHits);
-      final RerankResult rerankResult = kendraClient.rerank(rerankRequest);
+      final RescoreRequest rescoreRequest = new RescoreRequest(kendraClient.getExecutionPlanId(), queryParserResult.getQueryText(), originalHits);
+      final RescoreResult rescoreResult = kendraClient.rescore(rescoreRequest);
       Map<String, SearchHit> idToSearchHitMap = new HashMap<>();
       for (SearchHit searchHit : hits.getHits()) {
         idToSearchHitMap.put(searchHit.getId(), searchHit);
       }
       List<SearchHit> newSearchHits = new ArrayList<>();
       float maxScore = 0;
-      for (RerankResultItem rerankResultItem : rerankResult.getResultItems()) {
-        SearchHit searchHit = idToSearchHitMap.get(rerankResultItem.getDocumentId());
+      for (RescoreResultItem rescoreResultItem : rescoreResult.getResultItems()) {
+        SearchHit searchHit = idToSearchHitMap.get(rescoreResultItem.getDocumentId());
         if (searchHit == null) {
           logger.warn("Response from external service references hit id {}, which does not exist in original results. Skipping.",
-              rerankResultItem.getDocumentId());
+              rescoreResultItem.getDocumentId());
           continue;
         }
-        searchHit.score(rerankResultItem.getScore());
-        maxScore = Math.max(maxScore, rerankResultItem.getScore());
+        searchHit.score(rescoreResultItem.getScore());
+        maxScore = Math.max(maxScore, rescoreResultItem.getScore());
         newSearchHits.add(searchHit);
       }
       return new SearchHits(newSearchHits.toArray(new SearchHit[newSearchHits.size()]), hits.getTotalHits(), maxScore);
@@ -196,7 +197,6 @@ public class KendraIntelligentRanker implements Ranker {
 
     for (int i = 0; i < passages.size(); i++) {
       double score = bm25Scorer.score(query, passages.get(i));
-      logger.info("Passage {} has score {}", i, score);
       pq.offer(new PassageScore(score, i));
       if (pq.size() > TOP_K_PASSAGES) {
         // Maintain heap of top K passages

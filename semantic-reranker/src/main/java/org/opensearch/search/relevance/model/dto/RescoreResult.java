@@ -10,16 +10,18 @@ package org.opensearch.search.relevance.model.dto;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
-@JsonNaming(PropertyNamingStrategies.UpperCamelCaseStrategy.class)
-public class RerankResultItem {
-  private String documentId;
-  private Float score;
+import java.util.List;
 
-  public String getDocumentId() {
-    return documentId;
+@JsonNaming(PropertyNamingStrategies.UpperCamelCaseStrategy.class)
+public class RescoreResult {
+  private String rescoreId;
+  private List<RescoreResultItem> resultItems;
+
+  public String getRescoreId() {
+    return rescoreId;
   }
 
-  public Float getScore() {
-    return score;
+  public List<RescoreResultItem> getResultItems() {
+    return resultItems;
   }
 }

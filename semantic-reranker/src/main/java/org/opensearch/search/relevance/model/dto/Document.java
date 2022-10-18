@@ -16,19 +16,17 @@ import java.util.List;
 public class Document {
   
   private String id;
-  private String title;
-  private List<String> passages;
+  private String groupId;
   private List<String> tokenizedTitle;
-  private List<List<String>> tokenizedBodyPassages;
+  private List<String> tokenizedBody;
   private Float originalScore;
 
-  public Document(String id, String title, List<String> passages, List<String> tokenizedTitle, List<List<String>> tokenizedBodyPassages,
+  public Document(String id, String groupId, List<String> tokenizedTitle, List<String> tokenizedBody,
       Float originalScore) {
     this.id = id;
-    this.title = title;
-    this.passages = passages;
+    this.groupId = groupId;
     this.tokenizedTitle = tokenizedTitle;
-    this.tokenizedBodyPassages = tokenizedBodyPassages;
+    this.tokenizedBody = tokenizedBody;
     this.originalScore = originalScore;
   }
 
@@ -40,20 +38,12 @@ public class Document {
     this.id = id;
   }
 
-  public String getTitle() {
-    return title;
+  public String getGroupId() {
+    return groupId;
   }
 
-  public void setTitle(String title) {
-    this.title = title;
-  }
-
-  public List<String> getPassages() {
-    return passages;
-  }
-
-  public void setPassages(List<String> passages) {
-    this.passages = passages;
+  public void setGroupId(String groupId) {
+    this.groupId = groupId;
   }
 
   public List<String> getTokenizedTitle() {
@@ -64,12 +54,12 @@ public class Document {
     this.tokenizedTitle = tokenizedTitle;
   }
 
-  public List<List<String>> getTokenizedBodyPassages() {
-    return tokenizedBodyPassages;
+  public List<String> getTokenizedBody() {
+    return tokenizedBody;
   }
 
-  public void setTokenizedBodyPassages(List<List<String>> tokenizedBodyPassages) {
-    this.tokenizedBodyPassages = tokenizedBodyPassages;
+  public void setTokenizedBody(List<String> tokenizedBody) {
+    this.tokenizedBody = tokenizedBody;
   }
 
   public Float getOriginalScore() {

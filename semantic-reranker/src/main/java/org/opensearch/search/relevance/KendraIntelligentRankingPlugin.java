@@ -10,7 +10,7 @@ package org.opensearch.search.relevance;
 import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.ACCESS_KEY_SETTING;
 import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.ASSUME_ROLE_ARN_SETTING;
 import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.BODY_FIELD_SETTING;
-import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.ENDPOINT_ID_SETTING;
+import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.EXECUTION_PLAN_ID_SETTING;
 import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.RANKER_ENABLED_SETTING;
 import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.SECRET_KEY_SETTING;
 import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSettings.SERVICE_ENDPOINT_SETTING;
@@ -19,12 +19,10 @@ import static org.opensearch.search.relevance.settings.KendraIntelligentRankerSe
 
 import com.google.common.collect.ImmutableList;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.opensearch.action.support.ActionFilter;
@@ -33,8 +31,6 @@ import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
 import org.opensearch.cluster.service.ClusterService;
 import org.opensearch.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.common.settings.Setting;
-import org.opensearch.common.settings.Setting.Property;
-import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.NamedXContentRegistry;
 import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
@@ -48,7 +44,6 @@ import org.opensearch.search.relevance.client.KendraClientSettings;
 import org.opensearch.search.relevance.client.KendraHttpClient;
 import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.control.KendraSearchExtBuilder;
-import org.opensearch.search.relevance.constants.Constants;
 import org.opensearch.search.relevance.ranker.KendraIntelligentRanker;
 import org.opensearch.search.relevance.ranker.Ranker;
 import org.opensearch.threadpool.ThreadPool;
@@ -78,7 +73,7 @@ public class KendraIntelligentRankingPlugin extends Plugin implements ActionPlug
         // Following settings are stored in opensearch.yml
         SERVICE_ENDPOINT_SETTING,
         SERVICE_REGION_SETTING,
-        ENDPOINT_ID_SETTING,
+        EXECUTION_PLAN_ID_SETTING,
         ASSUME_ROLE_ARN_SETTING
     );
   }

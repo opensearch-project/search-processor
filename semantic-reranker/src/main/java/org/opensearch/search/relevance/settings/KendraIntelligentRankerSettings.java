@@ -66,7 +66,7 @@ public class KendraIntelligentRankerSettings {
 
   public static final Setting<String> SERVICE_REGION_SETTING = Setting.simpleString("kendra_intelligent_ranking.service.region", Setting.Property.NodeScope);
 
-  public static final Setting<String> ENDPOINT_ID_SETTING = Setting.simpleString("kendra_intelligent_ranking.service.resource_endpoint_id", Setting.Property.NodeScope);
+  public static final Setting<String> EXECUTION_PLAN_ID_SETTING = Setting.simpleString("kendra_intelligent_ranking.service.execution_plan_id", Setting.Property.NodeScope);
 
   public static final Setting<String> ASSUME_ROLE_ARN_SETTING = Setting.simpleString("kendra_intelligent_ranking.service.assume_role_arn", Setting.Property.NodeScope);
 }

@@ -13,31 +13,31 @@ import com.fasterxml.jackson.databind.annotation.JsonNaming;
 import java.util.List;
 
 @JsonNaming(PropertyNamingStrategies.UpperCamelCaseStrategy.class)
-public class RerankRequest {
-  private String rerankingEndpointId;
-  private String queryText;
+public class RescoreRequest {
+  private String rescoreExecutionPlanId;
+  private String searchQuery;
   private List<Document> documents;
 
-  public RerankRequest(String rerankingEndpointId, String queryText, List<Document> documents) {
-    this.rerankingEndpointId = rerankingEndpointId;
-    this.queryText = queryText;
+  public RescoreRequest(String rescoreExecutionPlanId, String searchQuery, List<Document> documents) {
+    this.rescoreExecutionPlanId = rescoreExecutionPlanId;
+    this.searchQuery = searchQuery;
     this.documents = documents;
   }
 
-  public String getRerankingEndpointId() {
-    return rerankingEndpointId;
+  public String getRescoreExecutionPlanId() {
+    return rescoreExecutionPlanId;
   }
 
-  public void setRerankingEndpointId(String rerankingEndpointId) {
-    this.rerankingEndpointId = rerankingEndpointId;
+  public void setRescoreExecutionPlanId(String rescoreExecutionPlanId) {
+    this.rescoreExecutionPlanId = rescoreExecutionPlanId;
   }
 
-  public String getQueryText() {
-    return queryText;
+  public String getSearchQuery() {
+    return searchQuery;
   }
 
-  public void setQueryText(String queryText) {
-    this.queryText = queryText;
+  public void setSearchQuery(String searchQuery) {
+    this.searchQuery = searchQuery;
   }
 
   public List<Document> getDocuments() {
