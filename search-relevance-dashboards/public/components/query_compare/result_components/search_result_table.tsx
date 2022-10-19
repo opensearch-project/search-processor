@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { EuiSpacer, EuiSplitPanel, EuiText } from '@elastic/eui';
 import React from 'react';
 import { ResultGridComponent } from './result_grid_component';
@@ -25,26 +30,5 @@ export const SearchResultTable = ({ querqyResult1, querqyResult2 }: SearchResult
         <ResultGridComponent querqyResult={querqyResult2} />
       </EuiSplitPanel.Inner>
     </EuiSplitPanel.Outer>
-    // <EuiSplitPanel.Outer direction="row">
-    //   <EuiSplitPanel.Inner
-    //     color="subdued"
-    //     style={{ marginLeft: '5vw', marginRight: '5vw', minHeight: '500px' }}
-    //   >
-    //     <EuiText>
-    //       <h3>Search Reuslt 1</h3>
-    //       <p>Left panel</p>
-    //       <p>Has more content</p>
-    //     </EuiText>
-    //   </EuiSplitPanel.Inner>
-    //   <EuiSplitPanel.Inner
-    //     color="subdued"
-    //     style={{ marginLeft: '5vw', marginRight: '5vw', minHeight: '500px' }}
-    //   >
-    //     <EuiText>
-    //       <h3>Search Reuslt 2</h3>
-    //       <p>Right panel</p>
-    //     </EuiText>
-    //   </EuiSplitPanel.Inner>
-    // </EuiSplitPanel.Outer>
   );
 };

@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import './result_grid.scss';
 import { EuiButtonIcon, EuiLink, EuiPanel, EuiText } from '@elastic/eui';
 import _, { uniqueId } from 'lodash';

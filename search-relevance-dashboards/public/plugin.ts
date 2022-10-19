@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import { i18n } from '@osd/i18n';
 import { AppMountParameters, CoreSetup, CoreStart, Plugin } from '../../../src/core/public';
 import {
@@ -6,7 +11,6 @@ import {
   AppPluginStartDependencies,
 } from './types';
 import { PLUGIN_NAME } from '../common';
-import DSLService from './services/dsl';
 
 export class SearchRelevancePlugin
   implements Plugin<SearchRelevancePluginSetup, SearchRelevancePluginStart> {
@@ -25,9 +29,8 @@ export class SearchRelevancePlugin
         const { renderApp } = await import('./application');
         // Get start services as specified in opensearch_dashboards.json
         const [coreStart, depsStart] = await core.getStartServices();
-        const dslService = new DSLService(coreStart.http);
         // Render the application
-        return renderApp(coreStart, depsStart as AppPluginStartDependencies, dslService, params);
+        return renderApp(coreStart, depsStart as AppPluginStartDependencies, params);
       },
     });
 

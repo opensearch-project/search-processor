@@ -1,3 +1,8 @@
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import {
   PluginInitializerContext,
   CoreSetup,
@@ -6,6 +11,7 @@ import {
   Plugin,
   ILegacyClusterClient,
 } from '../../../src/core/server';
+import { defineRoutes } from './routes';
 
 import { SearchRelevancePluginSetup, SearchRelevancePluginStart } from './types';
 
@@ -18,9 +24,10 @@ export class SearchRelevancePlugin
 
   public setup(core: CoreSetup) {
     this.logger.debug('SearchRelevance: Setup');
+    const router = core.http.createRouter();
 
     const opensearchSearchRelevanceClient: ILegacyClusterClient = core.opensearch.legacy.createClient(
-      'opensearch_search_relevance',
+      'opensearch_search_relevance'
     );
 
     // @ts-ignore
@@ -30,6 +37,9 @@ export class SearchRelevancePlugin
         relevancyWorkbenchClient: opensearchSearchRelevanceClient,
       };
     });
+
+    // Register server side APIs
+    defineRoutes({ router });
 
     return {};
   }

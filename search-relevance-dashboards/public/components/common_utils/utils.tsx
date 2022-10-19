@@ -1,4 +1,7 @@
-import murmur from 'murmurhash-js';
+/*
+ * Copyright OpenSearch Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 // Name validation 0>Name<=50
 export const isNameValid = (name: string) => {
