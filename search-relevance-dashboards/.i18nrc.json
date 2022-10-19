@@ -1,0 +1,7 @@
+{
+  "prefix": "relevancyWorkbench",
+  "paths": {
+    "relevancyWorkbench": "."
+  },
+  "translations": ["translations/ja-JP.json"]
+}
