@@ -7,6 +7,8 @@
  */
 package org.opensearch.search.relevance.client;
 
+import static org.opensearch.search.relevance.constants.Constants.KENDRA_RESCORE_URI;
+
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.DefaultRequest;
@@ -33,7 +35,6 @@ import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Map;
 
 import org.opensearch.search.relevance.constants.Constants;
 import org.opensearch.search.relevance.model.dto.RescoreRequest;
@@ -98,9 +99,7 @@ public class KendraHttpClient {
       try {
         Request<Void> request = new DefaultRequest<>(aws4Signer.getServiceName());
         request.setHttpMethod(HttpMethodName.POST);
-        request.setEndpoint(URI.create(serviceEndpoint));
-        request.setHeaders(Map.of("Content-Type", "application/x-amz-json-1.0",
-            "X-Amz-Target", "AWSKendraRerankingFrontendService.Rescore"));
+        request.setEndpoint(URI.create(serviceEndpoint + KENDRA_RESCORE_URI));
         request.setContent(new ByteArrayInputStream(objectMapper.writeValueAsString(rescoreRequest).getBytes(StandardCharsets.UTF_8)));
         aws4Signer.sign(request, awsCredentialsProvider.getCredentials());
 
@@ -117,5 +116,4 @@ public class KendraHttpClient {
       }
     });
   }
-
 }
