@@ -39,7 +39,8 @@ import org.opensearch.search.relevance.transformer.kendraintelligentranking.mode
 
 public class KendraHttpClient {
   private static final String KENDRA_RANKING_SERVICE_NAME = "kendrareranking";
-  public static final String KENDRA_RESCORE_URI = "/rescore";
+  private static final String KENDRA_RESCORE_URI = "rescore";
+  private static final String KENDRA_RESCORE_EXECUTION_PLANS = "rescore-execution-plans";
   private static final String ASSUME_ROLE_SESSION_NAME = "OpenSearchKendraIntelligentRankingPluginSession";
 
   private final AmazonHttpClient amazonHttpClient;
@@ -91,16 +92,12 @@ public class KendraHttpClient {
     }
   }
 
-  public String getExecutionPlanId() {
-    return executionPlanId;
-  }
-
   public RescoreResult rescore(RescoreRequest rescoreRequest) {
     return AccessController.doPrivileged((PrivilegedAction<RescoreResult>) () -> {
       try {
         Request<Void> request = new DefaultRequest<>(aws4Signer.getServiceName());
         request.setHttpMethod(HttpMethodName.POST);
-        request.setEndpoint(URI.create(serviceEndpoint + KENDRA_RESCORE_URI));
+        request.setEndpoint(buildRescoreURI());
         request.setContent(new ByteArrayInputStream(objectMapper.writeValueAsString(rescoreRequest).getBytes(StandardCharsets.UTF_8)));
         aws4Signer.sign(request, awsCredentialsProvider.getCredentials());
 
@@ -116,5 +113,10 @@ public class KendraHttpClient {
         throw new RuntimeException("Exception executing request.", ex);
       }
     });
+  }
+
+  public URI buildRescoreURI() {
+    return URI.create(String.join("/",
+        serviceEndpoint, KENDRA_RESCORE_EXECUTION_PLANS, executionPlanId, KENDRA_RESCORE_URI));
   }
 }

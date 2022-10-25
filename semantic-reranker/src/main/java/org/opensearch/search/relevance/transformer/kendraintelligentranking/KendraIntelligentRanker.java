@@ -127,7 +127,7 @@ public class KendraIntelligentRanker implements ResultTransformer {
         }
       }
 
-      final RescoreRequest rescoreRequest = new RescoreRequest(kendraClient.getExecutionPlanId(), queryParserResult.getQueryText(), originalHits);
+      final RescoreRequest rescoreRequest = new RescoreRequest(queryParserResult.getQueryText(), originalHits);
       final RescoreResult rescoreResult = kendraClient.rescore(rescoreRequest);
       Map<String, SearchHit> idToSearchHitMap = new HashMap<>();
       for (SearchHit searchHit : hits.getHits()) {

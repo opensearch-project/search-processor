@@ -14,22 +14,12 @@ import java.util.List;
 
 @JsonNaming(PropertyNamingStrategies.UpperCamelCaseStrategy.class)
 public class RescoreRequest {
-  private String rescoreExecutionPlanId;
   private String searchQuery;
   private List<Document> documents;
 
-  public RescoreRequest(String rescoreExecutionPlanId, String searchQuery, List<Document> documents) {
-    this.rescoreExecutionPlanId = rescoreExecutionPlanId;
+  public RescoreRequest(String searchQuery, List<Document> documents) {
     this.searchQuery = searchQuery;
     this.documents = documents;
-  }
-
-  public String getRescoreExecutionPlanId() {
-    return rescoreExecutionPlanId;
-  }
-
-  public void setRescoreExecutionPlanId(String rescoreExecutionPlanId) {
-    this.rescoreExecutionPlanId = rescoreExecutionPlanId;
   }
 
   public String getSearchQuery() {
