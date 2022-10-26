@@ -91,12 +91,6 @@ public class KendraIntelligentRanker implements ResultTransformer {
     return true;
   }
 
-  private QueryParserResult parseQuery(SearchRequest request, KendraIntelligentRankingConfiguration configuration) {
-    List<String> bodyFieldSetting = configuration.getProperties().getBodyFields();
-
-    return queryParser.parse(request.source().query(), bodyFieldSetting);
-  }
-
   /**
    *
    * @param hits Search hits to rerank with respect to query
@@ -109,7 +103,10 @@ public class KendraIntelligentRanker implements ResultTransformer {
       final ResultTransformerConfiguration configuration) {
     // TODO: mahitam change the body field setting
     KendraIntelligentRankingConfiguration kendraConfig = (KendraIntelligentRankingConfiguration) configuration;
-    QueryParserResult queryParserResult = parseQuery(request, kendraConfig);
+    QueryParserResult queryParserResult = queryParser.parse(
+        request.source().query(),
+        kendraConfig.getProperties().getBodyFields(),
+        kendraConfig.getProperties().getTitleFields());
     if (queryParserResult == null) {
       return hits;
     }
@@ -120,9 +117,13 @@ public class KendraIntelligentRanker implements ResultTransformer {
         SlidingWindowTextSplitter textSplitter = new SlidingWindowTextSplitter(PASSAGE_SIZE_LIMIT, SLIDING_WINDOW_STEP, MAXIMUM_PASSAGES);
         List<String> splitPassages = textSplitter.split(docSourceMap.get(queryParserResult.getBodyFieldName()).toString());
         List<List<String>> topPassages = getTopPassages(queryParserResult.getQueryText(), splitPassages);
+        List<String> tokenizedTitle = null;
+        if (queryParserResult.getTitleFieldName() != null) {
+          tokenizedTitle = textTokenizer.tokenize(docSourceMap.get(queryParserResult.getTitleFieldName()).toString());
+        }
         for (int i = 0; i < topPassages.size(); i++) {
           originalHits.add(
-              new Document(searchHit.getId() + "@" + (i + 1), searchHit.getId(), null, topPassages.get(i), searchHit.getScore())
+              new Document(searchHit.getId() + "@" + (i + 1), searchHit.getId(), tokenizedTitle, topPassages.get(i), searchHit.getScore())
           );
         }
       }

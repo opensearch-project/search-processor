@@ -38,7 +38,7 @@ import org.opensearch.search.relevance.transformer.kendraintelligentranking.mode
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreResult;
 
 public class KendraHttpClient {
-  private static final String KENDRA_RANKING_SERVICE_NAME = "kendrareranking";
+  private static final String KENDRA_RANKING_SERVICE_NAME = "kendra-ranking";
   private static final String KENDRA_RESCORE_URI = "rescore";
   private static final String KENDRA_RESCORE_EXECUTION_PLANS = "rescore-execution-plans";
   private static final String ASSUME_ROLE_SESSION_NAME = "OpenSearchKendraIntelligentRankingPluginSession";
