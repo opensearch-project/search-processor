@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,7 +25,6 @@ import org.opensearch.search.SearchHits;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfiguration;
 import org.opensearch.search.relevance.transformer.ResultTransformer;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraHttpClient;
-import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.PassageScore;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.Document;
@@ -52,18 +49,13 @@ public class KendraIntelligentRanker implements ResultTransformer {
 
   private static final Logger logger = LogManager.getLogger(KendraIntelligentRanker.class);
 
-  private final OpenSearchClient openSearchClient;
   private final KendraHttpClient kendraClient;
   private final TextTokenizer textTokenizer;
-  private final CloseableHttpClient httpClient;
   private final QueryParser queryParser;
 
-  public KendraIntelligentRanker(OpenSearchClient openSearchClient,
-      KendraHttpClient kendraClient) {
-    this.openSearchClient = openSearchClient;
+  public KendraIntelligentRanker(KendraHttpClient kendraClient) {
     this.kendraClient = kendraClient;
     this.textTokenizer = new TextTokenizer();
-    this.httpClient = HttpClientBuilder.create().build();
     this.queryParser = new QueryParser();
   }
 
@@ -101,7 +93,6 @@ public class KendraIntelligentRanker implements ResultTransformer {
   public SearchHits transform(final SearchHits hits,
       final SearchRequest request,
       final ResultTransformerConfiguration configuration) {
-    // TODO: mahitam change the body field setting
     KendraIntelligentRankingConfiguration kendraConfig = (KendraIntelligentRankingConfiguration) configuration;
     QueryParserResult queryParserResult = queryParser.parse(
         request.source().query(),

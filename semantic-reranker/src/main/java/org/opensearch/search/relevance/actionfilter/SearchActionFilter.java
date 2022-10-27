@@ -77,7 +77,6 @@ public class SearchActionFilter implements ActionFilter {
       final ActionListener<Response> listener,
       final ActionFilterChain<Request, Response> chain) {
 
-    // TODO: Double check tookTime calculation
     final long startTime = System.nanoTime();
 
     if (!SearchAction.INSTANCE.name().equals(action)) {
@@ -160,14 +159,15 @@ public class SearchActionFilter implements ActionFilter {
   }
 
   /**
-   * Create a Listener
-   * @param listener
-   * @param startTime
-   * @param searchRequest
-   * @param orderedTransformersAndConfigs
-   * @param suppressSourceOnResponse
-   * @param <Response>
-   * @return
+   * Create a Listener that, during the OpenSearch response chain,
+   * calls external service Kendra Ranking to rerank OpenSearch hits
+   * @param listener default listened
+   * @param startTime time when request was received, used to calculate latency added by reranking
+   * @param searchRequest input search request
+   * @param orderedTransformersAndConfigs transformers to apply, with their corresponding configurations
+   * @param suppressSourceOnResponse boolean indicating whether to suppress the document source on response
+   * @param <Response> OpenSearch response type
+   * @return ActionListener with override for onResponse method
    */
   private <Response extends ActionResponse> ActionListener<Response> createSearchResponseListener(
       final ActionListener<Response> listener,

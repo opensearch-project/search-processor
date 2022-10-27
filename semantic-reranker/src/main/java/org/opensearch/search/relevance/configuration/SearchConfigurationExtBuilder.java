@@ -7,7 +7,7 @@
  */
 package org.opensearch.search.relevance.configuration;
 
-import static org.opensearch.search.relevance.transformer.TransformerType.RESULT_TRANSFORMER;
+import static org.opensearch.search.relevance.configuration.Constants.SEARCH_CONFIGURATION;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,21 +23,20 @@ import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentParser;
 import org.opensearch.search.SearchExtBuilder;
 import org.opensearch.search.relevance.transformer.ResultTransformerType;
+import org.opensearch.search.relevance.transformer.TransformerType;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration;
 
-public class ResultTransformerSearchExtBuilder extends SearchExtBuilder {
-  public static final String NAME = RESULT_TRANSFORMER.toString();
+public class SearchConfigurationExtBuilder extends SearchExtBuilder {
+  public static final String NAME = SEARCH_CONFIGURATION;
 
-  private static final Logger logger = LogManager.getLogger(ResultTransformerSearchExtBuilder.class);
-
-  // One entry for each result transformer type we support
+  private static final ParseField RESULT_TRANSFORMER = new ParseField(TransformerType.RESULT_TRANSFORMER.toString());
   private static final ParseField KENDRA_INTELLIGENT_RANKING = new ParseField(ResultTransformerType.KENDRA_INTELLIGENT_RANKING.toString());
 
   private List<ResultTransformerConfiguration> resultTransformerConfigurations = new ArrayList<>();
 
-  public ResultTransformerSearchExtBuilder() {}
+  public SearchConfigurationExtBuilder() {}
 
-  public ResultTransformerSearchExtBuilder(StreamInput input) throws IOException {
+  public SearchConfigurationExtBuilder(StreamInput input) throws IOException {
     ResultTransformerConfiguration cfg1 = input.readOptionalWriteable(KendraIntelligentRankingConfiguration::new);
     resultTransformerConfigurations.add(cfg1);
   }
@@ -54,8 +53,8 @@ public class ResultTransformerSearchExtBuilder extends SearchExtBuilder {
     return NAME;
   }
 
-  public static ResultTransformerSearchExtBuilder parse(XContentParser parser) throws IOException {
-    ResultTransformerSearchExtBuilder extBuilder = new ResultTransformerSearchExtBuilder();
+  public static SearchConfigurationExtBuilder parse(XContentParser parser) throws IOException {
+    SearchConfigurationExtBuilder extBuilder = new SearchConfigurationExtBuilder();
     XContentParser.Token token = parser.currentToken();
     String currentFieldName = null;
     if (token != XContentParser.Token.START_OBJECT && (token = parser.nextToken()) != XContentParser.Token.START_OBJECT) {
@@ -69,11 +68,22 @@ public class ResultTransformerSearchExtBuilder extends SearchExtBuilder {
       if (token == XContentParser.Token.FIELD_NAME) {
         currentFieldName = parser.currentName();
       } else if (token == XContentParser.Token.START_OBJECT) {
-        if (KENDRA_INTELLIGENT_RANKING.match(currentFieldName, parser.getDeprecationHandler())) {
-          extBuilder.addResultTransformer(
-              KendraIntelligentRankingConfiguration.parse(parser, null));
+        if (RESULT_TRANSFORMER.match(currentFieldName, parser.getDeprecationHandler())) {
+          while ((token = parser.nextToken()) != XContentParser.Token.END_OBJECT) {
+            if (token == XContentParser.Token.FIELD_NAME) {
+              currentFieldName = parser.currentName();
+            }
+            if (KENDRA_INTELLIGENT_RANKING.match(currentFieldName,
+                parser.getDeprecationHandler())) {
+              extBuilder.addResultTransformer(
+                  KendraIntelligentRankingConfiguration.parse(parser, null));
+            } else {
+              throw new IllegalArgumentException(
+                  "Unrecognized Result Transformer type [" + currentFieldName + "]");
+            }
+          }
         } else {
-          throw new IllegalArgumentException("Unrecognized Result Transformer type [" + currentFieldName + "]");
+          throw new IllegalArgumentException("Unrecognized Transformer type [" + currentFieldName + "]");
         }
       } else {
         throw new ParsingException(
@@ -100,10 +110,10 @@ public class ResultTransformerSearchExtBuilder extends SearchExtBuilder {
     if (obj == null) {
       return false;
     }
-    if (!(obj instanceof ResultTransformerSearchExtBuilder)) {
+    if (!(obj instanceof SearchConfigurationExtBuilder)) {
       return false;
     }
-    ResultTransformerSearchExtBuilder o = (ResultTransformerSearchExtBuilder) obj;
+    SearchConfigurationExtBuilder o = (SearchConfigurationExtBuilder) obj;
     return (this.resultTransformerConfigurations.size() == o.resultTransformerConfigurations.size() &&
         this.resultTransformerConfigurations.containsAll(o.resultTransformerConfigurations) &&
         o.resultTransformerConfigurations.containsAll(this.resultTransformerConfigurations)) ;

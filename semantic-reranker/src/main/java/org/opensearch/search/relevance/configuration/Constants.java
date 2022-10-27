@@ -11,6 +11,7 @@ import static org.opensearch.search.relevance.transformer.TransformerType.RESULT
 
 public class Constants {
   public static final String PLUGIN_NAME = "searchrelevance";
+  public static final String SEARCH_CONFIGURATION = "search_configuration";
 
   public static final String PLUGIN_SETTING_PREFIX =
       String.join(".", "index", "plugin", PLUGIN_NAME);

@@ -7,8 +7,8 @@
  */
 package org.opensearch.search.relevance.transformer.kendraintelligentranking.preprocess;
 
-import com.google.common.collect.Lists;
 import com.ibm.icu.text.BreakIterator;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -70,7 +70,7 @@ public class SlidingWindowTextSplitter {
    */
   public List<String> split(String text) {
     if (text.isEmpty()) {
-      return Lists.newArrayList();
+      return new ArrayList<>();
     }
 
     if (text.length() <= windowSize) {

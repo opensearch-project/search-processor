@@ -7,9 +7,8 @@
  */
 package org.opensearch.search.relevance;
 
-import com.google.common.collect.ImmutableList;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -35,7 +34,7 @@ import org.opensearch.search.relevance.transformer.ResultTransformerType;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraClientSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraHttpClient;
 import org.opensearch.search.relevance.client.OpenSearchClient;
-import org.opensearch.search.relevance.configuration.ResultTransformerSearchExtBuilder;
+import org.opensearch.search.relevance.configuration.SearchConfigurationExtBuilder;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.KendraIntelligentRanker;
 import org.opensearch.search.relevance.transformer.ResultTransformer;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings;
@@ -55,7 +54,7 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
   
   @Override
   public List<ActionFilter> getActionFilters() {
-    return ImmutableList.of(new SearchActionFilter(getAllResultTransformers(), openSearchClient));
+    return Arrays.asList(new SearchActionFilter(getAllResultTransformers(), openSearchClient));
   }
   
   @Override
@@ -83,9 +82,9 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
   ) {
     this.openSearchClient = new OpenSearchClient(client);
     this.kendraClient = new KendraHttpClient(KendraClientSettings.getClientSettings(environment.settings()));
-    this.kendraIntelligentRanker = new KendraIntelligentRanker(this.openSearchClient, this.kendraClient);
+    this.kendraIntelligentRanker = new KendraIntelligentRanker(this.kendraClient);
     
-    return ImmutableList.of(
+    return Arrays.asList(
         this.openSearchClient,
         this.kendraClient,
         this.kendraIntelligentRanker
@@ -95,7 +94,7 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
   @Override
   public List<SearchExtSpec<?>> getSearchExts() {
     return Collections.singletonList(
-        new SearchExtSpec<>(ResultTransformerSearchExtBuilder.NAME, ResultTransformerSearchExtBuilder::new, ResultTransformerSearchExtBuilder::parse));
+        new SearchExtSpec<>(SearchConfigurationExtBuilder.NAME, SearchConfigurationExtBuilder::new, SearchConfigurationExtBuilder::parse));
   }
   
 }

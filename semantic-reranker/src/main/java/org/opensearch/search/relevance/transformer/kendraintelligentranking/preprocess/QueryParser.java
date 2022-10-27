@@ -9,18 +9,14 @@ package org.opensearch.search.relevance.transformer.kendraintelligentranking.pre
 
 import static org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.Constants.BODY_FIELD;
 
-import com.google.common.annotations.VisibleForTesting;
 import java.util.List;
 import java.util.Locale;
-import java.util.Set;
 import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.opensearch.index.query.IntervalsSourceProvider.Match;
 import org.opensearch.index.query.MatchQueryBuilder;
 import org.opensearch.index.query.MultiMatchQueryBuilder;
 import org.opensearch.index.query.QueryBuilder;
-import org.opensearch.index.search.MatchQuery;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.Constants;
 
 public class QueryParser {

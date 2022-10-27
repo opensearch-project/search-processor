@@ -11,10 +11,8 @@ import static org.opensearch.search.relevance.configuration.Constants.RESULT_TRA
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.common.settings.Settings;
@@ -56,14 +54,14 @@ public class ConfigurationUtils {
       final SearchRequest searchRequest) {
 
     // Fetch result transformers specified in request
-    ResultTransformerSearchExtBuilder requestLevelSearchConfiguration = null;
+    SearchConfigurationExtBuilder requestLevelSearchConfiguration = null;
     if (searchRequest.source().ext() != null && !searchRequest.source().ext().isEmpty()) {
       // Filter ext builders by name
       List<SearchExtBuilder> extBuilders = searchRequest.source().ext().stream()
-          .filter(searchExtBuilder -> ResultTransformerSearchExtBuilder.NAME.equals(searchExtBuilder.getWriteableName()))
+          .filter(searchExtBuilder -> SearchConfigurationExtBuilder.NAME.equals(searchExtBuilder.getWriteableName()))
           .collect(Collectors.toList());
       if (!extBuilders.isEmpty()) {
-        requestLevelSearchConfiguration = (ResultTransformerSearchExtBuilder) extBuilders.get(0);
+        requestLevelSearchConfiguration = (SearchConfigurationExtBuilder) extBuilders.get(0);
       }
     }
 
