@@ -84,7 +84,9 @@ public class SearchActionFilter implements ActionFilter {
       return;
     }
 
-    final SearchRequest searchRequest = (SearchRequest) request;
+    SearchRequest searchRequest = (SearchRequest) request;
+    // Make a copy of the search request that will not be modified by any transformer
+    SearchRequest originalSearchRequest = new SearchRequest(searchRequest.indices());
 
     final String[] indices = searchRequest.indices();
     // Skip if no, or more than 1, index is specified.
@@ -93,27 +95,22 @@ public class SearchActionFilter implements ActionFilter {
       return;
     }
 
-    List<ResultTransformerConfiguration> resultTransformerConfigurations = getResultTransformerConfigurations(indices[0], searchRequest);
+    List<ResultTransformerConfiguration> resultTransformerConfigurations = getResultTransformerConfigurations(indices[0],
+        searchRequest);
 
     LinkedHashMap<ResultTransformer, ResultTransformerConfiguration> orderedTransformersAndConfigs = new LinkedHashMap<>();
     for (ResultTransformerConfiguration config : resultTransformerConfigurations) {
       ResultTransformer resultTransformer = supportedResultTransformers.get(config.getType());
+      // TODO: Should transformers make a decision based on the original request or the request they receive in the chain
       if (resultTransformer.shouldTransform(searchRequest, config)) {
+        searchRequest = resultTransformer.preprocessRequest(searchRequest, originalSearchRequest, config);
         orderedTransformersAndConfigs.put(resultTransformer, config);
       }
     }
 
     if (!orderedTransformersAndConfigs.isEmpty()) {
-      // Source is returned in response hits by default. If disabled by the user, overwrite and enable
-      // in order to access document contents for reranking, then suppress at response time.
-      boolean suppressSourceOnResponse = false;
-      if (searchRequest.source().fetchSource() != null && !searchRequest.source().fetchSource().fetchSource()) {
-        searchRequest.source().fetchSource(true);
-        suppressSourceOnResponse = true;
-      }
-
       final ActionListener<Response> searchResponseListener = createSearchResponseListener(
-          listener, startTime, searchRequest, orderedTransformersAndConfigs, suppressSourceOnResponse);
+          listener, startTime, orderedTransformersAndConfigs, searchRequest, originalSearchRequest);
       chain.proceed(task, action, request, searchResponseListener);
       return;
     }
@@ -165,16 +162,16 @@ public class SearchActionFilter implements ActionFilter {
    * @param startTime time when request was received, used to calculate latency added by reranking
    * @param searchRequest input search request
    * @param orderedTransformersAndConfigs transformers to apply, with their corresponding configurations
-   * @param suppressSourceOnResponse boolean indicating whether to suppress the document source on response
+   * @param originalSearchRequest original request without any modifications made by transformers
    * @param <Response> OpenSearch response type
    * @return ActionListener with override for onResponse method
    */
   private <Response extends ActionResponse> ActionListener<Response> createSearchResponseListener(
       final ActionListener<Response> listener,
       final long startTime,
-      final SearchRequest searchRequest,
       final LinkedHashMap<ResultTransformer, ResultTransformerConfiguration> orderedTransformersAndConfigs,
-      final boolean suppressSourceOnResponse) {
+      final SearchRequest searchRequest,
+      final SearchRequest originalSearchRequest) {
     return new ActionListener<Response>() {
 
       @Override
@@ -192,23 +189,29 @@ public class SearchActionFilter implements ActionFilter {
           final BytesStreamOutput out = new BytesStreamOutput();
           searchResponse.writeTo(out);
 
-          final StreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(),
-              namedWriteableRegistry);
+          final StreamInput in = new NamedWriteableAwareStreamInput(out.bytes().streamInput(), namedWriteableRegistry);
 
           SearchHits hits = new SearchHits(in);
           for (Map.Entry<ResultTransformer, ResultTransformerConfiguration> entry : orderedTransformersAndConfigs.entrySet()) {
             hits = entry.getKey().transform(hits, searchRequest, entry.getValue());
           }
 
-          if (suppressSourceOnResponse) {
-            List<SearchHit> hitsWithModifiedSource = Arrays.stream(hits.getHits())
+          List<SearchHit> searchHitsList = Arrays.asList(hits.getHits());
+          if (originalSearchRequest.source().fetchSource() != null &&
+              !originalSearchRequest.source().fetchSource().fetchSource()) {
+            searchHitsList = searchHitsList.stream()
                 .map(hit -> hit.sourceRef(null))
                 .collect(Collectors.toList());
-            hits = new SearchHits(
-                hitsWithModifiedSource.toArray(new SearchHit[hitsWithModifiedSource.size()]),
-                hits.getTotalHits(),
-                hits.getMaxScore());
           }
+          final int lastHitIndex = Math.min(searchHitsList.size(),
+              (originalSearchRequest.source().from() + originalSearchRequest.source().size()));
+          searchHitsList = searchHitsList.subList(originalSearchRequest.source().from(), lastHitIndex);
+
+          // TODO: How to handle SearchHits.TotalHits when transformer modifies the hit count
+          hits = new SearchHits(
+              searchHitsList.toArray(new SearchHit[searchHitsList.size()]),
+              hits.getTotalHits(),
+              hits.getMaxScore());
 
           final InternalAggregations aggregations =
               in.readBoolean() ? InternalAggregations.readFrom(in) : null;
@@ -248,7 +251,7 @@ public class SearchActionFilter implements ActionFilter {
           listener.onResponse((Response) newResponse);
 
           // TODO: Change this to a metric
-          logger.info("Re-ranking overhead time: {}ms",
+          logger.info("Result transformer operations overhead time: {}ms",
               tookInMillis - searchResponse.getTook().getMillis());
         } catch (final Exception e) {
           logger.error("Result transformer operations failed.", e);
