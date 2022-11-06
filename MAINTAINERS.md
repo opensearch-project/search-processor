@@ -32,6 +32,10 @@ This document explains who the maintainers are (see below), what they do in this
 | Maintainer              | GitHub ID                               | Affiliation |
 |-------------------------|-----------------------------------------| ----------- |
 | Anirudha Jadhav         | [anirudha](https://github.com/anirudha) | Amazon      |
+| Michael Froh		  | [msfroh](https://github.com/msfroh)     | Amazon	  |
+| Mark Cohen		  | [macohen](https://github.com/macohen)   | Amazon	  |
+| Lior Perry		  | [yang-db](https://github.com/yang-db)   | Amazon	  |
+| Shenoy Pratik		  | [ps48](https://github.com/ps48)	    | Amazon	  |
 
 ## Maintainer Responsibilities
 
