@@ -43,7 +43,7 @@ jobs:
 #  Build-search-request-processor-Windows:
 #    strategy:
 #      matrix:
-        java: [ 11, 17 ]
+#        java: [ 11, 17 ]
 #
 #    name: Build and Test Search Request Processor Plugin on Windows
 #    runs-on: windows-latest
