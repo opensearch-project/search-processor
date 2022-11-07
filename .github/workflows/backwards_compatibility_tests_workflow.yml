@@ -63,7 +63,7 @@ jobs:
 #        run: |
 #          sudo apt-get install libopenblas-dev gfortran -y
 
-      - name: Run SRP Rolling-Upgrade BWC Tests from BWCVersion-${{ matrix.bwc_version }} to OpenSearch Version-${{ matrix.opensearch_version }}
-        run: |
-          echo "Running rolling-upgrade backwards compatibility tests ..."
-          ./gradlew :qa:rolling-upgrade:testRollingUpgrade -Dtests.bwc.version=$BWC_VERSION_ROLLING_UPGRADE
+#      - name: Run SRP Rolling-Upgrade BWC Tests from BWCVersion-${{ matrix.bwc_version }} to OpenSearch Version-${{ matrix.opensearch_version }}
+#        run: |
+#          echo "Running rolling-upgrade backwards compatibility tests ..."
+#          ./gradlew :qa:rolling-upgrade:testRollingUpgrade -Dtests.bwc.version=$BWC_VERSION_ROLLING_UPGRADE
