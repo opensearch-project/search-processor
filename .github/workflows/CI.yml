@@ -1,4 +1,4 @@
-name: Build and Test Search Request Processor
+name: Build & Test Search Request Processor
 on:
   schedule:
     - cron: '0 0 * * *'  # every night
@@ -12,7 +12,7 @@ on:
       - "feature/**"
 
 jobs:
-  Build-k-NN:
+  Build-search-request-processor:
     strategy:
       matrix:
         java: [11, 17]
@@ -40,24 +40,24 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-  Build-search-request-processor-Windows:
-    strategy:
-      matrix:
+#  Build-search-request-processor-Windows:
+#    strategy:
+#      matrix:
         java: [ 11, 17 ]
+#
+#    name: Build and Test Search Request Processor Plugin on Windows
+#    runs-on: windows-latest
 
-    name: Build and Test Search Request Processor Plugin on Windows
-    runs-on: windows-latest
+#    steps:
+#      - name: Checkout Search Request Processor
+#        uses: actions/checkout@v1
 
-    steps:
-      - name: Checkout Search Request Processor
-        uses: actions/checkout@v1
-
-      - name: Setup Java ${{ matrix.java }}
-        uses: actions/setup-java@v1
-        with:
-          java-version: ${{ matrix.java }}
-
-      - name: Run build
-        run: |
-          ./gradlew.bat build
+#      - name: Setup Java ${{ matrix.java }}
+#        uses: actions/setup-java@v1
+#        with:
+#          java-version: ${{ matrix.java }}
+#
+#      - name: Run build
+#        run: |
+#          ./gradlew.bat build
 
