@@ -34,6 +34,6 @@ public class SearchRelevancePluginIT extends OpenSearchIntegTestCase {
         String body = EntityUtils.toString(response.getEntity());
 
         logger.info("response body: {}", body);
-        assertThat(body, containsString("search-relevance"));
+        assertThat(body, containsString("search-processor"));
     }
 }
