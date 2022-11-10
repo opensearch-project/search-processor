@@ -251,8 +251,8 @@ public class SearchActionFilter implements ActionFilter {
           logger.info("Re-ranking overhead time: {}ms",
               tookInMillis - searchResponse.getTook().getMillis());
         } catch (final Exception e) {
-          logger.error("Failed to parse search response.", e);
-          throw new OpenSearchException("Failed to parse a search response.", e);
+          logger.error("Result transformer operations failed.", e);
+          throw new OpenSearchException("Result transformer operations failed.", e);
         }
       }
 

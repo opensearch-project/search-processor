@@ -22,15 +22,25 @@ import org.opensearch.search.relevance.transformer.kendraintelligentranking.conf
 public class QueryParser {
   private static final Logger logger = LogManager.getLogger(QueryParser.class);
 
+  private static final String BODY_FIELD_REQUIRED_ERROR_MESSAGE =
+      "Property [" + BODY_FIELD + "] must be specified";
   private static final String FILED_MISMATCH_ERROR_MESSAGE =
       "Mismatch: Field configured in %s property [%s] is not present in query fields [%s]. Will not apply Kendra Intelligent Ranking.";
+  private static final String QUERY_PARSER_RESULT_LOG =
+      "Kendra Intelligent Ranker query parser fields for query type [%s]: bodyField: %s, titleField: %s";
+  private static final String QUERY_PARSER_RESULT_LOG_WITHOUT_TITLE =
+      "Kendra Intelligent Ranker query parser fields for query type [%s]: bodyField: %s";
 
   public QueryParserResult parse(
       final QueryBuilder query,
       final List<String> bodyFieldSetting,
       final List<String> titleFieldSetting) {
-    final String bodyFieldFromSetting = bodyFieldSetting.isEmpty() ? null : bodyFieldSetting.get(0);
-    final String titleFieldFromSetting = titleFieldSetting.isEmpty() ? null : titleFieldSetting.get(0);
+    if (bodyFieldSetting == null || bodyFieldSetting.isEmpty()) {
+      throw new IllegalArgumentException(BODY_FIELD_REQUIRED_ERROR_MESSAGE);
+    }
+
+    final String bodyFieldFromSetting = bodyFieldSetting.get(0);
+    final String titleFieldFromSetting = (titleFieldSetting == null || titleFieldSetting.isEmpty()) ? null : titleFieldSetting.get(0);
     QueryParserResult result = null;
 
     if (query instanceof MatchQueryBuilder) {
@@ -51,6 +61,8 @@ public class QueryParser {
           bodyFieldFromSetting, matchQuery.fieldName()));
     } else {
       result = new QueryParserResult(matchQuery.value().toString(), bodyFieldFromSetting);
+      logger.info(String.format(Locale.ENGLISH, QUERY_PARSER_RESULT_LOG_WITHOUT_TITLE,
+          matchQuery.NAME, result.bodyFieldName));
     }
     return result;
   }
@@ -76,6 +88,8 @@ public class QueryParser {
     } else {
       final String titleFieldToUse = configuredTitleFieldPresentInQuery ? titleFieldFromSetting : null;
       result = new QueryParserResult(multiMatchQuery.value().toString(), bodyFieldFromSetting, titleFieldToUse);
+      logger.info(String.format(Locale.ENGLISH, QUERY_PARSER_RESULT_LOG,
+          multiMatchQuery.NAME, result.bodyFieldName, result.titleFieldName));
     }
     return result;
   }
