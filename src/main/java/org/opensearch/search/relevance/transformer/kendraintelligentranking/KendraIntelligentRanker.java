@@ -111,6 +111,10 @@ public class KendraIntelligentRanker implements ResultTransformer {
         List<String> tokenizedTitle = null;
         if (queryParserResult.getTitleFieldName() != null) {
           tokenizedTitle = textTokenizer.tokenize(docSourceMap.get(queryParserResult.getTitleFieldName()).toString());
+          // If tokens list is empty, use null
+          if (tokenizedTitle.isEmpty()) {
+            tokenizedTitle = null;
+          }
         }
         for (int i = 0; i < topPassages.size(); i++) {
           originalHits.add(
