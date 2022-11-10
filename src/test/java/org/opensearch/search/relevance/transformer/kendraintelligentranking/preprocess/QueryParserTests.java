@@ -24,11 +24,28 @@ public class QueryParserTests extends OpenSearchTestCase {
   private static final String INVALID_FIELD = "invalidField";
   private QueryParser queryParser = new QueryParser();
 
+  public void testParse_BodyFieldNull_ThrowsException() {
+    assertThrows(IllegalArgumentException.class, () -> queryParser.parse(
+        new MatchQueryBuilder(TEST_BODY_FIELD, TEST_QUERY_TEXT),
+        null,
+        null)
+    );
+  }
+
   public void testParse_Match_RequestFieldMatchesSetting() {
     QueryParser.QueryParserResult queryParserResult = queryParser.parse(
         new MatchQueryBuilder(TEST_BODY_FIELD, TEST_QUERY_TEXT),
         Arrays.asList(TEST_BODY_FIELD),
         Arrays.asList(TEST_TITLE_FIELD));
+
+    performQueryParserResultAssertions(queryParserResult, TEST_QUERY_TEXT, TEST_BODY_FIELD, null);
+  }
+
+  public void testParse_Match_TitleFieldSettingNull() {
+    QueryParser.QueryParserResult queryParserResult = queryParser.parse(
+        new MatchQueryBuilder(TEST_BODY_FIELD, TEST_QUERY_TEXT),
+        Arrays.asList(TEST_BODY_FIELD),
+        null);
 
     performQueryParserResultAssertions(queryParserResult, TEST_QUERY_TEXT, TEST_BODY_FIELD, null);
   }
@@ -56,6 +73,15 @@ public class QueryParserTests extends OpenSearchTestCase {
         new MultiMatchQueryBuilder(TEST_QUERY_TEXT, TEST_BODY_FIELD, INVALID_FIELD),
         Arrays.asList(TEST_BODY_FIELD),
         Arrays.asList(TEST_TITLE_FIELD));
+
+    performQueryParserResultAssertions(queryParserResult, TEST_QUERY_TEXT, TEST_BODY_FIELD, null);
+  }
+
+  public void testParse_MultiMatch_TitleFieldSettingNull() {
+    QueryParser.QueryParserResult queryParserResult = queryParser.parse(
+        new MultiMatchQueryBuilder(TEST_QUERY_TEXT, TEST_BODY_FIELD, TEST_TITLE_FIELD),
+        Arrays.asList(TEST_BODY_FIELD),
+        null);
 
     performQueryParserResultAssertions(queryParserResult, TEST_QUERY_TEXT, TEST_BODY_FIELD, null);
   }
