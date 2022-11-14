@@ -15,7 +15,6 @@ import org.opensearch.common.settings.SecureSetting;
 import org.opensearch.common.settings.SecureString;
 import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Setting.Property;
-import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.Constants;
 
 public class KendraIntelligentRankerSettings {
 
@@ -26,24 +25,13 @@ public class KendraIntelligentRankerSettings {
       Property.Dynamic, Property.IndexScope);
 
   /**
-   * Document field to be considered as "body" when invoking Kendra.
+   * Validator for body and title field settings
    */
-  public static final Setting<List<String>> KENDRA_BODY_FIELD_SETTING = Setting.listSetting(Constants.BODY_FIELD_SETTING_NAME, Collections.emptyList(),
-      Function.identity(), new FieldSettingValidator(Constants.BODY_FIELD_SETTING_NAME),
-      Property.Dynamic, Property.IndexScope);
-
-  /**
-   * Document field to be considered as "title" when invoking Kendra.
-   */
-  public static final Setting<List<String>> KENDRA_TITLE_FIELD_SETTING = Setting.listSetting(Constants.TITLE_FIELD_SETTING_NAME, Collections.emptyList(),
-      Function.identity(), new FieldSettingValidator(Constants.TITLE_FIELD_SETTING_NAME),
-      Property.Dynamic, Property.IndexScope);
-
-  static final class FieldSettingValidator implements Setting.Validator<List<String>> {
+  static final class FieldValidator implements Setting.Validator<List<String>> {
 
     private String settingName;
 
-    public FieldSettingValidator(final String name) {
+    public FieldValidator(final String name) {
       this.settingName = name;
     }
 
@@ -54,6 +42,55 @@ public class KendraIntelligentRankerSettings {
       }
     }
   }
+
+  /**
+   * Validator for doc limit setting
+   */
+  static final class DocLimitValidator implements Setting.Validator<Integer> {
+
+    private String settingName;
+
+    public DocLimitValidator(final String name) {
+      this.settingName = name;
+    }
+
+    @Override
+    public void validate(Integer value) {
+      if (value != null && value < Constants.KENDRA_DEFAULT_DOC_LIMIT) {
+        throw new IllegalArgumentException("Setting the value of [" + this.settingName + "] below "
+            + Constants.KENDRA_DEFAULT_DOC_LIMIT + " will affect ranking accuracy");
+      }
+    }
+  }
+
+  /**
+   * Validator objects
+   */
+  public static final FieldValidator BODY_FIELD_VALIDATOR = new FieldValidator(Constants.BODY_FIELD);
+  public static final FieldValidator TITLE_FIELD_VALIDATOR = new FieldValidator(Constants.TITLE_FIELD);
+  public static final DocLimitValidator DOC_LIMIT_VALIDATOR = new DocLimitValidator(Constants.DOC_LIMIT);
+
+  /**
+   * Document field to be considered as "body" when invoking Kendra.
+   */
+  public static final Setting<List<String>> KENDRA_BODY_FIELD_SETTING = Setting.listSetting(Constants.BODY_FIELD_SETTING_NAME,
+      Collections.emptyList(), Function.identity(), BODY_FIELD_VALIDATOR,
+      Property.Dynamic, Property.IndexScope);
+
+  /**
+   * Document field to be considered as "title" when invoking Kendra.
+   */
+  public static final Setting<List<String>> KENDRA_TITLE_FIELD_SETTING = Setting.listSetting(Constants.TITLE_FIELD_SETTING_NAME,
+      Collections.emptyList(), Function.identity(), TITLE_FIELD_VALIDATOR,
+      Property.Dynamic, Property.IndexScope);
+
+
+
+  public static final Setting<Integer> KENDRA_DOC_LIMIT_SETTING = Setting.intSetting(
+      Constants.DOC_LIMIT_SETTING_NAME, Constants.KENDRA_DEFAULT_DOC_LIMIT, 1,
+      DOC_LIMIT_VALIDATOR, Property.Dynamic, Property.IndexScope);
+
+
 
   /**
    * The access key (ie login id) for connecting to Kendra.
@@ -83,6 +120,7 @@ public class KendraIntelligentRankerSettings {
       KENDRA_ORDER_SETTING,
       KENDRA_BODY_FIELD_SETTING,
       KENDRA_TITLE_FIELD_SETTING,
+      KENDRA_DOC_LIMIT_SETTING,
       ACCESS_KEY_SETTING,
       SECRET_KEY_SETTING,
       SESSION_TOKEN_SETTING,
