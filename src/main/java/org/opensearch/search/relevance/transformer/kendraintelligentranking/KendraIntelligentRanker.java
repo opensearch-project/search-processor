@@ -93,23 +93,19 @@ public class KendraIntelligentRanker implements ResultTransformer {
 
   @Override
   public SearchRequest preprocessRequest(final SearchRequest request,
-      final SearchRequest originalSearchRequest,
       final ResultTransformerConfiguration configuration) {
     // Source is returned in response hits by default. If disabled by the user, overwrite and enable
     // in order to access document contents for reranking, then suppress at response time.
     if (request.source().fetchSource() != null && !request.source().fetchSource().fetchSource()) {
-      originalSearchRequest.source().fetchSource(request.source().fetchSource());
       request.source().fetchSource(true);
     }
 
     int from = request.source().from() == -1 ? SearchService.DEFAULT_FROM : request.source().from();
     int size = request.source().size() == -1 ? SearchService.DEFAULT_SIZE : request.source().size();
-    originalSearchRequest.source().from(from);
-    originalSearchRequest.source().size(size);
 
     KendraIntelligentRankingConfiguration kendraConfiguration = (KendraIntelligentRankingConfiguration) configuration;
     int sizeOverride = Math.max(kendraConfiguration.getProperties().getDocLimit(), from + size);
-    request.source().from(0);
+    request.source().from(SearchService.DEFAULT_FROM);
     request.source().size(sizeOverride);
     return request;
   }
@@ -145,7 +141,7 @@ public class KendraIntelligentRanker implements ResultTransformer {
         String titleFieldName = queryParserResult.getTitleFieldName();
         if (docSourceMap.get(bodyFieldName) == null) {
           String errorMessage = String.format(Locale.ENGLISH,
-              "Kendra Intelligent Ranking cannot be applied when documents are missing %s [%s]. Document ID [].",
+              "Kendra Intelligent Ranking cannot be applied when documents are missing %s [%s]. Document ID [%s].",
               BODY_FIELD, bodyFieldName, originalHits.get(j).getId());
           logger.error(errorMessage);
           throw new KendraIntelligentRankingException(errorMessage);
