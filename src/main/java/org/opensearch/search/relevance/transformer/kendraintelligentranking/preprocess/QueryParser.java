@@ -18,7 +18,6 @@ import org.opensearch.index.query.MatchQueryBuilder;
 import org.opensearch.index.query.MultiMatchQueryBuilder;
 import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.Constants;
-import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.KendraIntelligentRankingException;
 
 public class QueryParser {
   private static final Logger logger = LogManager.getLogger(QueryParser.class);

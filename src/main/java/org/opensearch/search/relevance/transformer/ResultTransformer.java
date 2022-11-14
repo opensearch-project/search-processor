@@ -32,12 +32,10 @@ public interface ResultTransformer {
   /**
    * Preprocess the incoming Search Request to support the requirements of the transformer
    * @param request input Search Request
-   * @param originalSearchRequest Search Request object in which to retain original input parameters
    * @param configuration Configuration parameters for the transformer
    * @return SearchRequest with updated attributes
    */
   SearchRequest preprocessRequest(final SearchRequest request,
-      final SearchRequest originalSearchRequest,
       final ResultTransformerConfiguration configuration);
 
   /**
