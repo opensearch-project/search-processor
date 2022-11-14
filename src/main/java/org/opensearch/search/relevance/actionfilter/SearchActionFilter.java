@@ -44,6 +44,7 @@ import org.opensearch.search.profile.SearchProfileShardResults;
 import org.opensearch.search.relevance.configuration.ConfigurationUtils;
 import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfiguration;
+import org.opensearch.search.relevance.dto.OriginalRequestFields;
 import org.opensearch.search.relevance.transformer.ResultTransformer;
 import org.opensearch.search.relevance.transformer.ResultTransformerType;
 import org.opensearch.search.suggest.Suggest;
@@ -86,8 +87,10 @@ public class SearchActionFilter implements ActionFilter {
         }
 
         SearchRequest searchRequest = (SearchRequest) request;
-        // Make a copy of the search request that will not be modified by any transformer
-        SearchRequest originalSearchRequest = new SearchRequest(searchRequest.indices());
+
+        // TODO: Remove OriginalRequestFields and replace with a deep copy of the SearchRequest object
+        // once https://github.com/opensearch-project/OpenSearch/issues/869 is implemented
+        OriginalRequestFields originalRequestFields = new OriginalRequestFields(searchRequest);
 
         final String[] indices = searchRequest.indices();
         // Skip if no, or more than 1, index is specified.
@@ -104,14 +107,14 @@ public class SearchActionFilter implements ActionFilter {
             ResultTransformer resultTransformer = supportedResultTransformers.get(config.getType());
             // TODO: Should transformers make a decision based on the original request or the request they receive in the chain
             if (resultTransformer.shouldTransform(searchRequest, config)) {
-                searchRequest = resultTransformer.preprocessRequest(searchRequest, originalSearchRequest, config);
+                searchRequest = resultTransformer.preprocessRequest(searchRequest, config);
                 orderedTransformersAndConfigs.put(resultTransformer, config);
             }
         }
 
         if (!orderedTransformersAndConfigs.isEmpty()) {
             final ActionListener<Response> searchResponseListener = createSearchResponseListener(
-                    listener, startTime, orderedTransformersAndConfigs, searchRequest, originalSearchRequest);
+                    listener, startTime, orderedTransformersAndConfigs, searchRequest, originalRequestFields);
             chain.proceed(task, action, request, searchResponseListener);
             return;
         }
@@ -164,7 +167,7 @@ public class SearchActionFilter implements ActionFilter {
      * @param startTime                     time when request was received, used to calculate latency added by reranking
      * @param searchRequest                 input search request
      * @param orderedTransformersAndConfigs transformers to apply, with their corresponding configurations
-     * @param originalSearchRequest         original request without any modifications made by transformers
+     * @param originalRequestFields         original request without any modifications made by transformers
      * @param <Response>                    OpenSearch response type
      * @return ActionListener with override for onResponse method
      */
@@ -173,7 +176,7 @@ public class SearchActionFilter implements ActionFilter {
             final long startTime,
             final LinkedHashMap<ResultTransformer, ResultTransformerConfiguration> orderedTransformersAndConfigs,
             final SearchRequest searchRequest,
-            final SearchRequest originalSearchRequest) {
+            final OriginalRequestFields originalRequestFields) {
         return new ActionListener<Response>() {
 
             @Override
@@ -199,16 +202,15 @@ public class SearchActionFilter implements ActionFilter {
                     }
 
                     List<SearchHit> searchHitsList = Arrays.asList(hits.getHits());
-                    if (originalSearchRequest.source() != null &&
-                            originalSearchRequest.source().fetchSource() != null &&
-                            !originalSearchRequest.source().fetchSource().fetchSource()) {
+                    if (originalRequestFields.fetchSourceContext() != null &&
+                            !originalRequestFields.fetchSourceContext().fetchSource()) {
                         searchHitsList = searchHitsList.stream()
                                 .map(hit -> hit.sourceRef(null))
                                 .collect(Collectors.toList());
                     }
                     final int lastHitIndex = Math.min(searchHitsList.size(),
-                            (originalSearchRequest.source().from() + originalSearchRequest.source().size()));
-                    searchHitsList = searchHitsList.subList(originalSearchRequest.source().from(), lastHitIndex);
+                            (originalRequestFields.from() + originalRequestFields.size()));
+                    searchHitsList = searchHitsList.subList(originalRequestFields.from(), lastHitIndex);
 
                     // TODO: How to handle SearchHits.TotalHits when transformer modifies the hit count
                     hits = new SearchHits(
