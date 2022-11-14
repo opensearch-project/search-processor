@@ -14,14 +14,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.PriorityQueue;
 
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -55,7 +52,6 @@ public class KendraIntelligentRanker implements ResultTransformer {
   private static final double BM25_B_VALUE = 0.75;
   private static final double BM25_K1_VALUE = 1.6;
   private static final int TOP_K_PASSAGES = 3;
-  private static final int KENDRA_DOC_LIMIT = 25;
 
   private static final Logger logger = LogManager.getLogger(KendraIntelligentRanker.class);
 
@@ -84,11 +80,12 @@ public class KendraIntelligentRanker implements ResultTransformer {
     if (request.source() == null) {
       return false;
     }
+    KendraIntelligentRankingConfiguration kendraConfiguration = (KendraIntelligentRankingConfiguration) configuration;
 
     // Skip if there is scroll, sorting, or the start of the page is greater than the document limit for Kendra Ranking
     if (request.scroll() != null ||
         (request.source().sorts() != null && !request.source().sorts().isEmpty()) ||
-        request.source().from() >= KENDRA_DOC_LIMIT) {
+        request.source().from() >= kendraConfiguration.getProperties().getDocLimit()) {
       return false;
     }
     return true;
@@ -110,7 +107,8 @@ public class KendraIntelligentRanker implements ResultTransformer {
     originalSearchRequest.source().from(from);
     originalSearchRequest.source().size(size);
 
-    int sizeOverride = Math.max(KENDRA_DOC_LIMIT, from + size);
+    KendraIntelligentRankingConfiguration kendraConfiguration = (KendraIntelligentRankingConfiguration) configuration;
+    int sizeOverride = Math.max(kendraConfiguration.getProperties().getDocLimit(), from + size);
     request.source().from(0);
     request.source().size(sizeOverride);
     return request;
@@ -134,9 +132,10 @@ public class KendraIntelligentRanker implements ResultTransformer {
     if (queryParserResult == null) {
       return hits;
     }
+    KendraIntelligentRankingConfiguration kendraConfiguration = (KendraIntelligentRankingConfiguration) configuration;
     try {
       List<SearchHit> originalHits = Arrays.asList(hits.getHits());
-      final int numberOfHitsToRerank = Math.min(originalHits.size(), KENDRA_DOC_LIMIT);
+      final int numberOfHitsToRerank = Math.min(originalHits.size(), kendraConfiguration.getProperties().getDocLimit());
       List<Document> originalHitsAsDocuments = new ArrayList<>();
       Map<String, SearchHit> idToSearchHitMap = new HashMap<>();
       for (int j = 0; j < numberOfHitsToRerank; ++j) {
@@ -189,7 +188,7 @@ public class KendraIntelligentRanker implements ResultTransformer {
         newSearchHits.add(searchHit);
       }
       // Add remaining hits to response, which are already sorted by OpenSearch score
-      for (int i = KENDRA_DOC_LIMIT; i < originalHits.size(); ++i) {
+      for (int i = numberOfHitsToRerank; i < originalHits.size(); ++i) {
         newSearchHits.add(originalHits.get(i));
       }
       return new SearchHits(newSearchHits.toArray(new SearchHit[newSearchHits.size()]), hits.getTotalHits(), maxScore);
