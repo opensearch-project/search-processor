@@ -5,6 +5,7 @@ apply plugin: 'idea'
 apply plugin: 'opensearch.opensearchplugin'
 apply plugin: 'opensearch.yaml-rest-test'
 apply plugin: 'opensearch.pluginzip'
+apply plugin: 'jacoco'
 
 group = 'org.opensearch'
 
@@ -52,7 +53,7 @@ validateNebulaPom.enabled = false
 
 buildscript {
     ext {
-        opensearch_version = "2.1.0-SNAPSHOT"
+        opensearch_version = "2.4.0-SNAPSHOT"
     }
 
     repositories {
