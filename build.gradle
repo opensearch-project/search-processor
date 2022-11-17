@@ -9,7 +9,7 @@ apply plugin: 'jacoco'
 
 group = 'org.opensearch'
 
-def pluginName = 'search-relevance'
+def pluginName = 'search-processor'
 def pluginDescription = 'Make Opensearch results more relevant.'
 def projectPath = 'org.opensearch'
 def pathToPlugin = 'search.relevance'
