@@ -1,21 +1,20 @@
 package org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration;
 
-import junit.framework.TestCase;
 import org.junit.Test;
+import org.opensearch.test.OpenSearchTestCase;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
-
-public class KendraIntelligentRankingConfigurationTest extends TestCase {
+public class KendraIntelligentRankingConfigurationTests extends OpenSearchTestCase {
 
     @Test
     public void parseWithNullParserAndContext() {
         try {
             KendraIntelligentRankingConfiguration.parse(null, null);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            fail();
+        } catch (NullPointerException | IOException e) {
         }
-        fail();
+
     }
+
 }
