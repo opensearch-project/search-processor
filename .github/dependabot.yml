@@ -1,3 +1,4 @@
+name: Dependabot
 updates:
   - directory: /
     open-pull-requests-limit: 1
