@@ -35,10 +35,6 @@ jobs:
           commit_user_email: support@github.com
           commit_options: '--signoff'
 
-      - name: Run spotless
-        run: |
-          ./gradlew spotlessApply
-
       - name: Commit the changes
         uses: stefanzweifel/git-auto-commit-action@v4.7.2
         with:
