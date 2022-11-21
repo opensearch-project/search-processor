@@ -5,6 +5,7 @@ apply plugin: 'idea'
 apply plugin: 'opensearch.opensearchplugin'
 apply plugin: 'opensearch.yaml-rest-test'
 apply plugin: 'opensearch.pluginzip'
+apply plugin: 'jacoco'
 
 group = 'org.opensearch'
 
@@ -89,6 +90,7 @@ dependencies {
 
 test {
     include '**/*Tests.class'
+    finalizedBy jacocoTestReport
 }
 
 task integTest(type: RestIntegTestTask) {
@@ -123,6 +125,15 @@ sourceSets {
             includes = ["**/*.yml"]
         }
     }
+}
+
+
+jacocoTestReport {
+    reports {
+        xml.enabled = true
+        html.enabled = false
+    }
+    dependsOn test
 }
 
 // TODO: Enable these checks
