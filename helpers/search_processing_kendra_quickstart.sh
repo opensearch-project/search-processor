@@ -30,6 +30,7 @@ function print_help() {
   cat << EOF
 Usage: $0 [-p <execution_plan_id>] [-r <region>] [-e <kendra_ranking_endpoint>]
         [--profile <AWS profile name>] [--create-execution-plan]
+        [--volume-name <docker_volume_name>]
   -p | --execution-plan-id          The ID returned from Kendra Intelligent Ranking service
                                     from the call to CreateRescoreExecutionPlan. Required if
                                     --create-execution-plan is not set.
@@ -46,6 +47,12 @@ Usage: $0 [-p <execution_plan_id>] [-r <region>] [-e <kendra_ranking_endpoint>]
                                     create a Kendra Intelligent Ranking execution plan with
                                     1 capacity unit. NOTE: You will be charged for provisioned
                                     execution plan.
+  --volume-name                     Without this option, the OpenSearch container will write
+                                    the index to ephemeral container storage, which is lost when
+                                    the container is removed. Using this option will map the
+                                    named Docker volume to \$OPENSEARCH_ROOT/data, so index data
+                                    will persist across executions. If the named volume does not
+                                    exist, it will be created.
 
   NOTE: If the --profile option is not specified, the script will attempt to read AWS 
   credentials (access/secret key, optional session token) from environment variables, 
@@ -91,6 +98,11 @@ while [ "$#" -gt 0 ]; do
         --create-execution-plan )
             shift
             CREATE_EXECUTION_PLAN=1
+            ;;
+        --volume-name )
+            shift
+	    VOLUME_NAME=$1
+	    shift
             ;;
     esac
 done
@@ -335,6 +347,19 @@ fi
 #
 docker pull ${OPENSEARCH_DASHBOARDS_IMAGE_TAG}
 
+
+if [ -n "${VOLUME_NAME:-}" ]; then
+  if ! docker volume inspect ${VOLUME_NAME}> /dev/null; then 
+    echo "Creating volume ${VOLUME_NAME}"; 
+    docker volume create ${VOLUME_NAME}
+  fi
+  DATA_DIR_BLOCK="    volumes:
+      - ${VOLUME_NAME}:/usr/share/opensearch/data"
+  VOLUME_BLOCK="volumes:
+  ${VOLUME_NAME}:
+    external: true"
+fi
+
 # 
 # Create a docker-compose.yml file that will launch an OpenSearch node with the image we
 # just built and an OpenSearch Dashboards node that points to the OpenSearch node.
@@ -343,6 +368,7 @@ cat >docker-compose.yml <<EOF
 version: '3'
 networks:
   opensearch-net:
+${VOLUME_BLOCK:-}
 services:
   opensearch-node:
     image: ${DOCKER_IMAGE_TAG}
@@ -366,6 +392,7 @@ services:
       - 9600:9600
     networks:
       - opensearch-net
+${DATA_DIR_BLOCK:-}
   opensearch-dashboard:
     image: ${OPENSEARCH_DASHBOARDS_IMAGE_TAG}
     container_name: opensearch-dashboards
