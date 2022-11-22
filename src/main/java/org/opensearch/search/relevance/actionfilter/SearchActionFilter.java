@@ -35,6 +35,7 @@ import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.opensearch.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.common.settings.Setting;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
@@ -107,7 +108,8 @@ public class SearchActionFilter implements ActionFilter {
       // Source is returned in response hits by default. If disabled by the user, overwrite and enable
       // in order to access document contents for reranking, then suppress at response time.
       boolean suppressSourceOnResponse = false;
-      if (searchRequest.source().fetchSource() != null && !searchRequest.source().fetchSource().fetchSource()) {
+      if (searchRequest.source() != null && searchRequest.source().fetchSource() != null &&
+              !searchRequest.source().fetchSource().fetchSource()) {
         searchRequest.source().fetchSource(true);
         suppressSourceOnResponse = true;
       }
@@ -143,14 +145,13 @@ public class SearchActionFilter implements ActionFilter {
 
     // Fetch all index settings for this plugin
     String[] settingNames = supportedResultTransformers.values()
-        .stream()
-        .map(t -> t.getTransformerSettings()
             .stream()
-            .map(s -> s.getKey())
-            .collect(Collectors.toList()))
-        .flatMap(Collection::stream)
-        .collect(Collectors.toList())
-        .toArray(new String[0]);
+            .map(t -> t.getTransformerSettings()
+                    .stream()
+                    .map(Setting::getKey)
+                    .collect(Collectors.toList()))
+            .flatMap(Collection::stream)
+            .toArray(String[]::new);
 
     configs = ConfigurationUtils.getResultTransformersFromIndexConfiguration(
         openSearchClient.getIndexSettings(indexName, settingNames));

@@ -124,8 +124,10 @@ public class SearchConfigurationExtBuilder extends SearchExtBuilder {
     return Objects.hash(this.getClass(), this.resultTransformerConfigurations);
   }
 
-  public void setResultTransformers(final List<ResultTransformerConfiguration> resultTransformerConfigurations) {
-    this.resultTransformerConfigurations = resultTransformerConfigurations; }
+  public SearchConfigurationExtBuilder setResultTransformers(final List<ResultTransformerConfiguration> resultTransformerConfigurations) {
+    this.resultTransformerConfigurations = resultTransformerConfigurations;
+    return this;
+  }
 
   public List<ResultTransformerConfiguration> getResultTransformers() {
     return this.resultTransformerConfigurations;
