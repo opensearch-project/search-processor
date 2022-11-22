@@ -55,7 +55,7 @@ public class ConfigurationUtils {
 
     // Fetch result transformers specified in request
     SearchConfigurationExtBuilder requestLevelSearchConfiguration = null;
-    if (searchRequest.source().ext() != null && !searchRequest.source().ext().isEmpty()) {
+    if (searchRequest.source() != null && searchRequest.source().ext() != null && !searchRequest.source().ext().isEmpty()) {
       // Filter ext builders by name
       List<SearchExtBuilder> extBuilders = searchRequest.source().ext().stream()
           .filter(searchExtBuilder -> SearchConfigurationExtBuilder.NAME.equals(searchExtBuilder.getWriteableName()))
