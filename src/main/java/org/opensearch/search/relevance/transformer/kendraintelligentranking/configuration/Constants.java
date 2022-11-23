@@ -17,6 +17,7 @@ public class Constants {
   // Transformer properties
   public static final String BODY_FIELD = "body_field";
   public static final String TITLE_FIELD = "title_field";
+  public static final String DOC_LIMIT = "doc_limit";
 
   public static final String KENDRA_SETTINGS_PREFIX =
       String.join(".", RESULT_TRANSFORMER_SETTING_PREFIX, KENDRA_INTELLIGENT_RANKING);
@@ -27,5 +28,8 @@ public class Constants {
       String.join(".", KENDRA_SETTINGS_PREFIX, PROPERTIES, BODY_FIELD);
   public static final String TITLE_FIELD_SETTING_NAME =
       String.join(".", KENDRA_SETTINGS_PREFIX, PROPERTIES, TITLE_FIELD);
+  public static final String DOC_LIMIT_SETTING_NAME =
+      String.join(".", KENDRA_SETTINGS_PREFIX, PROPERTIES, DOC_LIMIT);
 
+  public static final int KENDRA_DEFAULT_DOC_LIMIT = 25;
 }
