@@ -161,7 +161,7 @@ public class KendraIntelligentRankerTests extends OpenSearchTestCase {
         SearchRequest originalRequest = new SearchRequest()
                 .source(new SearchSourceBuilder().query(new MatchQueryBuilder("body", "foo")));
 
-        int docLimit = randomInt(20);
+        int docLimit = randomIntBetween(1, 20);
         KendraIntelligentRankingProperties properties =
                 new KendraIntelligentRankingProperties(List.of("body"), List.of("title"), docLimit);
         ResultTransformerConfiguration configuration = new KendraIntelligentRankingConfiguration(1, properties);
@@ -197,6 +197,7 @@ public class KendraIntelligentRankerTests extends OpenSearchTestCase {
             return result;
         }));
         SearchHits transformedHits = ranker.transform(searchHits, originalRequest, configuration);
+
         assertNotSame(searchHits, transformedHits);
         // The top N (according to doc limit) should be in reverse order
         for (int i = 0; i < docLimit; i++) {
