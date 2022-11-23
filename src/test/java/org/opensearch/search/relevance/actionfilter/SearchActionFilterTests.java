@@ -25,11 +25,14 @@ import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.ShardSearchFailure;
 import org.opensearch.action.support.ActionFilterChain;
 import org.opensearch.client.Client;
+import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.collect.ImmutableOpenMap;
+import org.opensearch.common.document.DocumentField;
 import org.opensearch.common.io.stream.StreamOutput;
 import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentBuilder;
+import org.opensearch.common.xcontent.json.JsonXContent;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.builder.SearchSourceBuilder;
@@ -47,6 +50,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -54,6 +59,9 @@ import static org.mockito.Mockito.when;
 
 public class SearchActionFilterTests extends OpenSearchTestCase {
 
+    /**
+     * This filter only operates on search requests. Other request types (e.g. Delete) will still pass through.
+     */
     public void testIgnoresDelete() {
         Client client = Mockito.mock(Client.class);
         OpenSearchClient openSearchClient = new OpenSearchClient(client);
@@ -68,6 +76,9 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         assertTrue(proceedCalled.get());
     }
 
+    /**
+     * Test short-circuit code path where we skip the filter if no index is specified.
+     */
     public void testIgnoresSearchRequestOnZeroIndices() {
         Client client = Mockito.mock(Client.class);
         OpenSearchClient openSearchClient = new OpenSearchClient(client);
@@ -82,6 +93,9 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         assertTrue(proceedCalled.get());
     }
 
+    /**
+     * Test short-circuit code path where we skip the filter if multiple indices are specified.
+     */
     public void testIgnoresSearchRequestOnMultipleIndices() {
         Client client = Mockito.mock(Client.class);
         OpenSearchClient openSearchClient = new OpenSearchClient(client);
@@ -118,6 +132,9 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         return client;
     }
 
+    /**
+     * Probe the code path where we have one index, but no transformers.
+     */
     public void testOperatesOnSingleIndexWithNoTransformers() {
         Client client = buildMockClient("index");
         OpenSearchClient openSearchClient = new OpenSearchClient(client);
@@ -136,9 +153,19 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
 
 
     private static class MockTransformer implements ResultTransformer {
+        public MockTransformer() {
+            requestTransformer = i -> {};
+        }
+
+        public MockTransformer(Consumer<SearchRequest> requestTransformer) {
+            this.requestTransformer = requestTransformer;
+        }
+
+        private final Consumer<SearchRequest> requestTransformer;
         private boolean getTransformerSettingsWasCalled = false;
         private boolean shouldTransformWasCalled = false;
         private boolean transformWasCalled = false;
+        private boolean preproccessRequestWasCalled = false;
 
 
         @Override
@@ -151,6 +178,12 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         public boolean shouldTransform(SearchRequest request, ResultTransformerConfiguration configuration) {
             shouldTransformWasCalled = true;
             return true;
+        }
+
+        @Override
+        public SearchRequest preprocessRequest(SearchRequest request, ResultTransformerConfiguration configuration) {
+            preproccessRequestWasCalled = true;
+            return request;
         }
 
         @Override
@@ -184,6 +217,10 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
                 }
             };
 
+    /**
+     * Even if a transformer is wired into the SearchActionFilter, if it's not enabled by search request or
+     * index setting, the transformer will not be called.
+     */
     public void testTransformerDoesNotRunWhenNotEnabled() {
         Client client = buildMockClient("index");
         OpenSearchClient openSearchClient = new OpenSearchClient(client);
@@ -206,11 +243,15 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         assertTrue(proceedCalled.get());
         // We should try to check for index-level settings
         assertTrue(mockTransformer.getTransformerSettingsWasCalled);
+        assertFalse(mockTransformer.preproccessRequestWasCalled);
         assertFalse(mockTransformer.transformWasCalled);
         assertFalse(mockTransformer.shouldTransformWasCalled);
     }
 
-    public void testTransformEnabledInRequest() {
+    /**
+     * Should be able to enable transformer explicitly in a search request.
+     */
+    public void testTransformEnabledInRequest() throws IOException {
         Client client = buildMockClient("index");
         OpenSearchClient openSearchClient = new OpenSearchClient(client);
 
@@ -235,7 +276,7 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
                 ).setIndices("index")
                 .request();
         AtomicBoolean proceedCalled = new AtomicBoolean(false);
-        SearchResponse searchResponse = buildMockSearchResponse();
+        SearchResponse searchResponse = buildMockSearchResponse(randomInt(20));
 
         ActionFilterChain<SearchRequest, SearchResponse> searchFilterChain =
                 (task1, action, request, listener) -> {
@@ -244,7 +285,7 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
                 };
         AtomicBoolean onResponseCalled = new AtomicBoolean(false);
         AtomicBoolean onFailureCalled = new AtomicBoolean(false);
-        ActionListener<SearchResponse> downstreamListener = new ActionListener<SearchResponse>() {
+        ActionListener<SearchResponse> downstreamListener = new ActionListener<>() {
             @Override
             public void onResponse(SearchResponse searchResponse) {
                 onResponseCalled.set(true);
@@ -259,21 +300,37 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         assertTrue(proceedCalled.get());
         // We should NOT try to check for index-level settings, because we saw request-level settings
         assertFalse(mockTransformer.getTransformerSettingsWasCalled);
+        assertTrue(mockTransformer.preproccessRequestWasCalled);
         assertTrue(mockTransformer.transformWasCalled);
         assertTrue(mockTransformer.shouldTransformWasCalled);
         assertTrue(onResponseCalled.get());
         assertFalse(onFailureCalled.get());
     }
 
-    private static SearchResponse buildMockSearchResponse() {
+    private static SearchResponse buildMockSearchResponse(int numHits) throws IOException {
+        SearchHit[] hitsArray = new SearchHit[numHits];
+        for (int i = 0; i < numHits; i++) {
+            XContentBuilder sourceContent = JsonXContent.contentBuilder()
+                    .startObject()
+                    .field("_id", String.valueOf(i))
+                    .field("title", "doc" + i)
+                    .endObject();
+            hitsArray[i] = new SearchHit(i, String.valueOf(i),
+                    Map.of("title", new DocumentField("title", List.of("doc" + i))), Map.of());
+            hitsArray[i].sourceRef(BytesReference.bytes(sourceContent));
+        }
+
         return new SearchResponse(new InternalSearchResponse(
-                new SearchHits(new SearchHit[0], new TotalHits(100, TotalHits.Relation.EQUAL_TO), 1.0f),
+                new SearchHits(hitsArray, new TotalHits(100, TotalHits.Relation.EQUAL_TO), 1.0f),
                 null, null, null, false, false, 1
         ), null, 1, 1, 0, 0, new ShardSearchFailure[0],
                 new SearchResponse.Clusters(1, 1, 0));
     }
 
-    public void testTransformEnabledByIndexSetting() {
+    /**
+     * Should be able to enable transformer on all queries via index setting.
+     */
+    public void testTransformEnabledByIndexSetting() throws IOException {
         String prefix = "index.plugin.searchrelevance.result_transformer." +
                 ResultTransformerType.KENDRA_INTELLIGENT_RANKING;
         Settings enablePluginSettings = Settings.builder()
@@ -294,7 +351,7 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
                 .setIndices("index")
                 .request();
         AtomicBoolean proceedCalled = new AtomicBoolean(false);
-        SearchResponse searchResponse = buildMockSearchResponse();
+        SearchResponse searchResponse = buildMockSearchResponse(randomInt(20));
 
         ActionFilterChain<SearchRequest, SearchResponse> searchFilterChain =
                 (task1, action, request, listener) -> {
@@ -303,7 +360,7 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
                 };
         AtomicBoolean onResponseCalled = new AtomicBoolean(false);
         AtomicBoolean onFailureCalled = new AtomicBoolean(false);
-        ActionListener<SearchResponse> downstreamListener = new ActionListener<SearchResponse>() {
+        ActionListener<SearchResponse> downstreamListener = new ActionListener<>() {
             @Override
             public void onResponse(SearchResponse searchResponse) {
                 onResponseCalled.set(true);
@@ -318,9 +375,163 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         assertTrue(proceedCalled.get());
         // We should NOT try to check for index-level settings, because we saw request-level settings
         assertTrue(mockTransformer.getTransformerSettingsWasCalled);
+        assertTrue(mockTransformer.preproccessRequestWasCalled);
         assertTrue(mockTransformer.transformWasCalled);
         assertTrue(mockTransformer.shouldTransformWasCalled);
         assertTrue(onResponseCalled.get());
         assertFalse(onFailureCalled.get());
+    }
+
+    /**
+     * Verify that even if the transformer overrides source, from, and fetchSource, the original values get applied
+     * in the end.
+     */
+    public void testOutputUsesOriginalSourceParameters() throws IOException {
+        Client client = buildMockClient("index");
+        OpenSearchClient openSearchClient = new OpenSearchClient(client);
+
+        MockTransformer mockTransformer = new MockTransformer(request -> {
+            // Modify the request to always fetch source + request results 0-50
+            request.source()
+                    .from(0)
+                    .size(50)
+                    .fetchSource(true);
+        });
+
+        Map<ResultTransformerType, ResultTransformer> transformerMap =
+                Map.of(ResultTransformerType.KENDRA_INTELLIGENT_RANKING, mockTransformer);
+
+        SearchActionFilter searchActionFilter = new SearchActionFilter(transformerMap, openSearchClient);
+
+        Task task = Mockito.mock(Task.class);
+        SearchRequest searchRequest = new SearchRequestBuilder(null, SearchAction.INSTANCE)
+                .setSource(
+                        new SearchSourceBuilder()
+                                .from(10)
+                                .size(10)
+                                .fetchSource(false)
+                                .ext(
+                                        Collections.singletonList(new SearchConfigurationExtBuilder()
+                                                .setResultTransformers(
+                                                        Collections.singletonList(MOCK_TRANSFORMER_CONFIGURATION)
+                                                )
+                                        )
+                                )
+                ).setIndices("index")
+                .request();
+        AtomicBoolean proceedCalled = new AtomicBoolean(false);
+        SearchResponse searchResponse = buildMockSearchResponse(50);
+
+        ActionFilterChain<SearchRequest, SearchResponse> searchFilterChain =
+                (task1, action, request, listener) -> {
+                    proceedCalled.set(true);
+                    listener.onResponse(searchResponse);
+                };
+        AtomicBoolean onResponseCalled = new AtomicBoolean(false);
+        AtomicBoolean onFailureCalled = new AtomicBoolean(false);
+        AtomicReference<SearchResponse> returnedResponse = new AtomicReference<>();
+        ActionListener<SearchResponse> downstreamListener = new ActionListener<>() {
+            @Override
+            public void onResponse(SearchResponse searchResponse) {
+                returnedResponse.set(searchResponse);
+                onResponseCalled.set(true);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                onFailureCalled.set(true);
+            }
+        };
+        searchActionFilter.apply(task, SearchAction.NAME, searchRequest, downstreamListener, searchFilterChain);
+        assertTrue(proceedCalled.get());
+        // We should NOT try to check for index-level settings, because we saw request-level settings
+        assertFalse(mockTransformer.getTransformerSettingsWasCalled);
+        assertTrue(mockTransformer.preproccessRequestWasCalled);
+        assertTrue(mockTransformer.transformWasCalled);
+        assertTrue(mockTransformer.shouldTransformWasCalled);
+        assertTrue(onResponseCalled.get());
+        assertFalse(onFailureCalled.get());
+
+        assertNotNull(returnedResponse.get());
+        SearchResponse response = returnedResponse.get();
+        assertEquals(10, response.getHits().getHits().length);
+        for (int i = 0; i < 10; i++) {
+            assertEquals("doc" + (10 + i), response.getHits().getHits()[i].field("title").getValue());
+            assertFalse(response.getHits().getHits()[i].hasSource());
+        }
+    }
+
+    /**
+     * Check that we handle the case where the transformer returns top N, but the "from" starts after that.
+     */
+    public void testReturnEmptyWhenOriginalFromExceedsHitCount() throws IOException {
+        Client client = buildMockClient("index");
+        OpenSearchClient openSearchClient = new OpenSearchClient(client);
+
+        MockTransformer mockTransformer = new MockTransformer(request -> {
+            // Modify the request to always fetch source + request results 0-50
+            request.source()
+                    .from(0)
+                    .size(50)
+                    .fetchSource(true);
+        });
+
+        Map<ResultTransformerType, ResultTransformer> transformerMap =
+                Map.of(ResultTransformerType.KENDRA_INTELLIGENT_RANKING, mockTransformer);
+
+        SearchActionFilter searchActionFilter = new SearchActionFilter(transformerMap, openSearchClient);
+
+        Task task = Mockito.mock(Task.class);
+        SearchRequest searchRequest = new SearchRequestBuilder(null, SearchAction.INSTANCE)
+                .setSource(
+                        new SearchSourceBuilder()
+                                .from(50)
+                                .size(10)
+                                .fetchSource(false)
+                                .ext(
+                                        Collections.singletonList(new SearchConfigurationExtBuilder()
+                                                .setResultTransformers(
+                                                        Collections.singletonList(MOCK_TRANSFORMER_CONFIGURATION)
+                                                )
+                                        )
+                                )
+                ).setIndices("index")
+                .request();
+        AtomicBoolean proceedCalled = new AtomicBoolean(false);
+        SearchResponse searchResponse = buildMockSearchResponse(50);
+
+        ActionFilterChain<SearchRequest, SearchResponse> searchFilterChain =
+                (task1, action, request, listener) -> {
+                    proceedCalled.set(true);
+                    listener.onResponse(searchResponse);
+                };
+        AtomicBoolean onResponseCalled = new AtomicBoolean(false);
+        AtomicBoolean onFailureCalled = new AtomicBoolean(false);
+        AtomicReference<SearchResponse> returnedResponse = new AtomicReference<>();
+        ActionListener<SearchResponse> downstreamListener = new ActionListener<>() {
+            @Override
+            public void onResponse(SearchResponse searchResponse) {
+                returnedResponse.set(searchResponse);
+                onResponseCalled.set(true);
+            }
+
+            @Override
+            public void onFailure(Exception e) {
+                onFailureCalled.set(true);
+            }
+        };
+        searchActionFilter.apply(task, SearchAction.NAME, searchRequest, downstreamListener, searchFilterChain);
+        assertTrue(proceedCalled.get());
+        // We should NOT try to check for index-level settings, because we saw request-level settings
+        assertFalse(mockTransformer.getTransformerSettingsWasCalled);
+        assertTrue(mockTransformer.preproccessRequestWasCalled);
+        assertTrue(mockTransformer.transformWasCalled);
+        assertTrue(mockTransformer.shouldTransformWasCalled);
+        assertTrue(onResponseCalled.get());
+        assertFalse(onFailureCalled.get());
+
+        assertNotNull(returnedResponse.get());
+        SearchResponse response = returnedResponse.get();
+        assertEquals(0, response.getHits().getHits().length);
     }
 }

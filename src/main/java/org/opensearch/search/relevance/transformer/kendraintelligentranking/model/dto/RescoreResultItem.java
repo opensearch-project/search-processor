@@ -22,4 +22,20 @@ public class RescoreResultItem {
   public Float getScore() {
     return score;
   }
+
+  /**
+   * Setter for unit tests.
+   * @param documentId the ID of the rescored document.
+   */
+  public void setDocumentId(String documentId) {
+    this.documentId = documentId;
+  }
+
+  /**
+   * Setter for unit tests.
+   * @param score the updated score of the document.
+   */
+  public void setScore(Float score) {
+    this.score = score;
+  }
 }

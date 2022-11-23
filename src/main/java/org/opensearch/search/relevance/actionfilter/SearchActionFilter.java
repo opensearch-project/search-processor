@@ -39,12 +39,13 @@ import org.opensearch.common.settings.Setting;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
+import org.opensearch.search.builder.SearchSourceBuilder;
+import org.opensearch.search.fetch.subphase.FetchSourceContext;
 import org.opensearch.search.internal.InternalSearchResponse;
 import org.opensearch.search.profile.SearchProfileShardResults;
 import org.opensearch.search.relevance.configuration.ConfigurationUtils;
 import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfiguration;
-import org.opensearch.search.relevance.dto.OriginalRequestFields;
 import org.opensearch.search.relevance.transformer.ResultTransformer;
 import org.opensearch.search.relevance.transformer.ResultTransformerType;
 import org.opensearch.search.suggest.Suggest;
@@ -88,9 +89,18 @@ public class SearchActionFilter implements ActionFilter {
 
         SearchRequest searchRequest = (SearchRequest) request;
 
-        // TODO: Remove OriginalRequestFields and replace with a deep copy of the SearchRequest object
+        // TODO: Remove originalSearchSource and replace with a deep copy of the SearchRequest object
         // once https://github.com/opensearch-project/OpenSearch/issues/869 is implemented
-        OriginalRequestFields originalRequestFields = new OriginalRequestFields(searchRequest);
+        SearchSourceBuilder originalSearchSource = null;
+        if (searchRequest.source() != null) {
+            originalSearchSource = searchRequest.source().shallowCopy();
+            if (searchRequest.source().fetchSource() != null) {
+                FetchSourceContext fetchSourceContext = searchRequest.source().fetchSource();
+                // Clone the fetchSource
+                originalSearchSource.fetchSource(new FetchSourceContext(fetchSourceContext.fetchSource(),
+                        fetchSourceContext.includes(), fetchSourceContext.excludes()));
+            }
+        }
 
         final String[] indices = searchRequest.indices();
         // Skip if no, or more than 1, index is specified.
@@ -114,7 +124,7 @@ public class SearchActionFilter implements ActionFilter {
 
         if (!orderedTransformersAndConfigs.isEmpty()) {
             final ActionListener<Response> searchResponseListener = createSearchResponseListener(
-                    listener, startTime, orderedTransformersAndConfigs, searchRequest, originalRequestFields);
+                    listener, startTime, orderedTransformersAndConfigs, searchRequest, originalSearchSource);
             chain.proceed(task, action, request, searchResponseListener);
             return;
         }
@@ -167,7 +177,7 @@ public class SearchActionFilter implements ActionFilter {
      * @param startTime                     time when request was received, used to calculate latency added by reranking
      * @param searchRequest                 input search request
      * @param orderedTransformersAndConfigs transformers to apply, with their corresponding configurations
-     * @param originalRequestFields         original request without any modifications made by transformers
+     * @param originalSearchSource          original search source without any modifications made by transformers
      * @param <Response>                    OpenSearch response type
      * @return ActionListener with override for onResponse method
      */
@@ -176,7 +186,7 @@ public class SearchActionFilter implements ActionFilter {
             final long startTime,
             final LinkedHashMap<ResultTransformer, ResultTransformerConfiguration> orderedTransformersAndConfigs,
             final SearchRequest searchRequest,
-            final OriginalRequestFields originalRequestFields) {
+            final SearchSourceBuilder originalSearchSource) {
         return new ActionListener<Response>() {
 
             @Override
@@ -202,19 +212,27 @@ public class SearchActionFilter implements ActionFilter {
                     }
 
                     List<SearchHit> searchHitsList = Arrays.asList(hits.getHits());
-                    if (originalRequestFields.fetchSourceContext() != null &&
-                            !originalRequestFields.fetchSourceContext().fetchSource()) {
-                        searchHitsList = searchHitsList.stream()
-                                .map(hit -> hit.sourceRef(null))
-                                .collect(Collectors.toList());
+                    if (originalSearchSource != null) {
+                        if (originalSearchSource.fetchSource() != null &&
+                                !originalSearchSource.fetchSource().fetchSource()) {
+                            searchHitsList = searchHitsList.stream()
+                                    .map(hit -> hit.sourceRef(null))
+                                    .collect(Collectors.toList());
+                        }
+                        if (originalSearchSource.from() >= 0 && originalSearchSource.size() >= 0) {
+                            final int lastHitIndex = Math.min(searchHitsList.size(),
+                                    (originalSearchSource.from() + originalSearchSource.size()));
+                            if (originalSearchSource.from() > lastHitIndex) {
+                                searchHitsList = Collections.emptyList();
+                            } else {
+                                searchHitsList = searchHitsList.subList(originalSearchSource.from(), lastHitIndex);
+                            }
+                        }
                     }
-                    final int lastHitIndex = Math.min(searchHitsList.size(),
-                            (originalRequestFields.from() + originalRequestFields.size()));
-                    searchHitsList = searchHitsList.subList(originalRequestFields.from(), lastHitIndex);
 
                     // TODO: How to handle SearchHits.TotalHits when transformer modifies the hit count
                     hits = new SearchHits(
-                            searchHitsList.toArray(new SearchHit[searchHitsList.size()]),
+                            searchHitsList.toArray(new SearchHit[0]),
                             hits.getTotalHits(),
                             hits.getMaxScore());
 
