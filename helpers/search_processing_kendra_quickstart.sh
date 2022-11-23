@@ -9,9 +9,6 @@ set -o nounset
 readonly DOCKER_IMAGE_TAG="opensearch-with-ranking-plugin"
 readonly OPENSEARCH_VERSION="2.4.0"
 
-# Uncomment the following for prerelease testing:
-readonly SEARCH_PROCESSOR_PLUGIN_URL="https://github.com/msfroh/search-relevance/releases/download/v2.4.0-alpha/search-processor-disable-ssl-validation.zip"
-
 #
 # Set default values for OpenSearch (+Dashboards) image tags and plugin URL.
 # We can pass them from outside to override these settings for testing purposes.
