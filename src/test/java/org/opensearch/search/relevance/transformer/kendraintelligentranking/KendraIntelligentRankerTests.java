@@ -81,7 +81,8 @@ public class KendraIntelligentRankerTests extends OpenSearchTestCase {
 
     public void testShouldNotTransformWithoutQuery() {
         KendraIntelligentRanker ranker = new KendraIntelligentRanker(buildMockHttpClient());
-        SearchRequest originalRequest = new SearchRequest();
+        SearchRequest originalRequest = new SearchRequest()
+                .source(new SearchSourceBuilder().query(null));
         boolean shouldTransform = ranker.shouldTransform(originalRequest, new KendraIntelligentRankingConfiguration());
         assertFalse(shouldTransform);
     }
