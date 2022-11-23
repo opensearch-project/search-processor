@@ -77,7 +77,7 @@ public class KendraIntelligentRanker implements ResultTransformer {
    */
   @Override
   public boolean shouldTransform(final SearchRequest request, final ResultTransformerConfiguration configuration) {
-    if (request.source() == null) {
+    if (request.source() == null || request.source().query() == null) {
       return false;
     }
     KendraIntelligentRankingConfiguration kendraConfiguration = (KendraIntelligentRankingConfiguration) configuration;
@@ -96,7 +96,8 @@ public class KendraIntelligentRanker implements ResultTransformer {
       final ResultTransformerConfiguration configuration) {
     // Source is returned in response hits by default. If disabled by the user, overwrite and enable
     // in order to access document contents for reranking, then suppress at response time.
-    if (request.source().fetchSource() != null && !request.source().fetchSource().fetchSource()) {
+    if (request.source() != null && request.source().fetchSource() != null &&
+            !request.source().fetchSource().fetchSource()) {
       request.source().fetchSource(true);
     }
 
@@ -126,6 +127,11 @@ public class KendraIntelligentRanker implements ResultTransformer {
         kendraConfig.getProperties().getBodyFields(),
         kendraConfig.getProperties().getTitleFields());
     if (queryParserResult == null) {
+      // Unknown query type or query does not reference body field
+      return hits;
+    }
+    if (hits.getHits().length == 0) {
+      // Avoid call to rerank empty results
       return hits;
     }
     KendraIntelligentRankingConfiguration kendraConfiguration = (KendraIntelligentRankingConfiguration) configuration;
