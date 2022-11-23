@@ -24,4 +24,21 @@ public class RescoreResult {
   public List<RescoreResultItem> getResultItems() {
     return resultItems;
   }
+
+  /**
+   * Setter used for unit tests.
+   * @param rescoreId The identifier associated with the scores that Amazon Kendra Intelligent Ranking
+   *                  gives to the results.
+   */
+  public void setRescoreId(String rescoreId) {
+    this.rescoreId = rescoreId;
+  }
+
+  /**
+   * Setter used for unit tests.
+   * @param resultItems A list of result items for documents with new relevancy scores.
+   */
+  public void setResultItems(List<RescoreResultItem> resultItems) {
+    this.resultItems = resultItems;
+  }
 }

@@ -7,33 +7,21 @@
  */
 package org.opensearch.search.relevance;
 
-import com.carrotsearch.randomizedtesting.annotations.ThreadLeakScope;
 import org.apache.http.util.EntityUtils;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
-import org.opensearch.plugins.Plugin;
-import org.opensearch.test.OpenSearchIntegTestCase;
+import org.opensearch.test.rest.OpenSearchRestTestCase;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
 
-import static org.hamcrest.Matchers.containsString;
-
-@ThreadLeakScope(ThreadLeakScope.Scope.NONE)
-@OpenSearchIntegTestCase.ClusterScope(scope = OpenSearchIntegTestCase.Scope.SUITE)
-public class SearchRelevancePluginIT extends OpenSearchIntegTestCase {
-
-    @Override
-    protected Collection<Class<? extends Plugin>> nodePlugins() {
-        return Collections.singletonList(SearchRelevancePlugin.class);
-    }
+public class SearchRelevancePluginIT extends OpenSearchRestTestCase {
 
     public void testPluginInstalled() throws IOException {
-        Response response = createRestClient().performRequest(new Request("GET", "/_cat/plugins"));
+        Response response = client().performRequest(new Request("GET", "/_cat/plugins"));
         String body = EntityUtils.toString(response.getEntity());
 
         logger.info("response body: {}", body);
-        assertThat(body, containsString("search-processor"));
+        assertNotNull(body);
+        assertTrue(body.contains("search-processor"));
     }
 }
