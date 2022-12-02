@@ -7,17 +7,6 @@
  */
 package org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration;
 
-import static org.opensearch.search.relevance.configuration.Constants.ORDER;
-import static org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.Constants.DOC_LIMIT_SETTING_NAME;
-import static org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.Constants.KENDRA_DEFAULT_DOC_LIMIT;
-import static org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings.BODY_FIELD_VALIDATOR;
-import static org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings.DOC_LIMIT_VALIDATOR;
-import static org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings.TITLE_FIELD_VALIDATOR;
-
-import java.io.IOException;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
 import org.opensearch.common.ParseField;
 import org.opensearch.common.ParsingException;
 import org.opensearch.common.io.stream.StreamInput;
@@ -30,7 +19,18 @@ import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.XContentParser;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfiguration;
 import org.opensearch.search.relevance.configuration.TransformerConfiguration;
-import org.opensearch.search.relevance.transformer.ResultTransformerType;
+import org.opensearch.search.relevance.transformer.kendraintelligentranking.KendraIntelligentRanker;
+
+import java.io.IOException;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+
+import static org.opensearch.search.relevance.configuration.Constants.ORDER;
+import static org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.Constants.KENDRA_DEFAULT_DOC_LIMIT;
+import static org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings.BODY_FIELD_VALIDATOR;
+import static org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings.DOC_LIMIT_VALIDATOR;
+import static org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings.TITLE_FIELD_VALIDATOR;
 
 public class KendraIntelligentRankingConfiguration extends ResultTransformerConfiguration {
   private static final ObjectParser<KendraIntelligentRankingConfiguration, Void> PARSER;
@@ -39,7 +39,7 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
     PARSER = new ObjectParser<KendraIntelligentRankingConfiguration, Void>("kendra_intelligent_ranking_configuration", KendraIntelligentRankingConfiguration::new);
     PARSER.declareInt(TransformerConfiguration::setOrder, TRANSFORMER_ORDER);
     PARSER.declareObject(KendraIntelligentRankingConfiguration::setProperties,
-        (p, c) -> KendraIntelligentRankingProperties.parse(p, c),
+            KendraIntelligentRankingProperties::parse,
         TRANSFORMER_PROPERTIES);
   }
 
@@ -66,8 +66,8 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
   }
 
   @Override
-  public ResultTransformerType getType() {
-    return ResultTransformerType.KENDRA_INTELLIGENT_RANKING;
+  public String getTransformerName() {
+    return KendraIntelligentRanker.NAME;
   }
 
   @Override
@@ -76,7 +76,7 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
     this.properties.writeTo(out);
   }
 
-  public static ResultTransformerConfiguration parse(XContentParser parser, Void context) throws IOException {
+  public static ResultTransformerConfiguration parse(XContentParser parser) throws IOException {
     try {
       KendraIntelligentRankingConfiguration configuration = PARSER.parse(parser, null);
       if (configuration != null && configuration.getOrder() <= 0) {

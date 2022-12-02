@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
+import org.apache.commons.lang3.StringUtils;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreRequest;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreResult;
 
@@ -50,45 +51,53 @@ public class KendraHttpClient {
   private final AWS4Signer aws4Signer;
   private final String serviceEndpoint;
   private final String executionPlanId;
-  private final ObjectMapper objectMapper;
+  private final ObjectMapper objectMapper = new ObjectMapper()
+          .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
   public KendraHttpClient(KendraClientSettings clientSettings) {
-    amazonHttpClient = AccessController.doPrivileged((PrivilegedAction<AmazonHttpClient>) () -> new AmazonHttpClient(new ClientConfiguration()));
-    errorHandler = new SimpleAwsErrorHandler();
-    responseHandler = new SimpleResponseHandler();
-    aws4Signer = new AWS4Signer();
-    aws4Signer.setServiceName(KENDRA_RANKING_SERVICE_NAME);
-    aws4Signer.setRegionName(clientSettings.getServiceRegion());
-    objectMapper = new ObjectMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     serviceEndpoint = clientSettings.getServiceEndpoint();
     executionPlanId = clientSettings.getExecutionPlanId();
+    if (StringUtils.isNotEmpty(serviceEndpoint) && StringUtils.isNotEmpty(executionPlanId)) {
+      amazonHttpClient = AccessController.doPrivileged((PrivilegedAction<AmazonHttpClient>) () -> new AmazonHttpClient(new ClientConfiguration()));
+      errorHandler = new SimpleAwsErrorHandler();
+      responseHandler = new SimpleResponseHandler();
+      aws4Signer = new AWS4Signer();
+      aws4Signer.setServiceName(KENDRA_RANKING_SERVICE_NAME);
+      aws4Signer.setRegionName(clientSettings.getServiceRegion());
 
-    final AWSCredentialsProvider credentialsProvider;
-    final AWSCredentials credentials = clientSettings.getCredentials();
-    if (credentials == null) {
-      // Use environment variables, system properties or instance profile credentials.
-      credentialsProvider = DefaultAWSCredentialsProviderChain.getInstance();
+      final AWSCredentialsProvider credentialsProvider;
+      final AWSCredentials credentials = clientSettings.getCredentials();
+      if (credentials == null) {
+        // Use environment variables, system properties or instance profile credentials.
+        credentialsProvider = DefaultAWSCredentialsProviderChain.getInstance();
+      } else {
+        // Use keystore credentials.
+        credentialsProvider = new AWSStaticCredentialsProvider(credentials);
+      }
+
+      final String assumeRoleArn = clientSettings.getAssumeRoleArn();
+      if (assumeRoleArn != null && !assumeRoleArn.isBlank()) {
+        // If AssumeRoleArn was provided in config, use auto-refreshed role credentials.
+        awsCredentialsProvider = AccessController.doPrivileged(
+                (PrivilegedAction<AWSCredentialsProvider>) () -> {
+                  AWSSecurityTokenService awsSecurityTokenService = AWSSecurityTokenServiceClientBuilder.standard()
+                          .withCredentials(credentialsProvider)
+                          .withRegion(clientSettings.getServiceRegion())
+                          .build();
+
+                  return new STSAssumeRoleSessionCredentialsProvider.Builder(clientSettings.getAssumeRoleArn(), ASSUME_ROLE_SESSION_NAME)
+                          .withStsClient(awsSecurityTokenService)
+                          .build();
+                });
+      } else {
+        awsCredentialsProvider = credentialsProvider;
+      }
     } else {
-      // Use keystore credentials.
-      credentialsProvider = new AWSStaticCredentialsProvider(credentials);
-    }
-
-    final String assumeRoleArn = clientSettings.getAssumeRoleArn();
-    if (assumeRoleArn != null && !assumeRoleArn.isBlank()) {
-      // If AssumeRoleArn was provided in config, use auto-refreshed role credentials.
-      awsCredentialsProvider = AccessController.doPrivileged(
-          (PrivilegedAction<AWSCredentialsProvider>) () -> {
-            AWSSecurityTokenService awsSecurityTokenService = AWSSecurityTokenServiceClientBuilder.standard()
-                .withCredentials(credentialsProvider)
-                .withRegion(clientSettings.getServiceRegion())
-                .build();
-
-            return new STSAssumeRoleSessionCredentialsProvider.Builder(clientSettings.getAssumeRoleArn(), ASSUME_ROLE_SESSION_NAME)
-                .withStsClient(awsSecurityTokenService)
-                .build();
-          });
-    } else {
-      awsCredentialsProvider = credentialsProvider;
+      amazonHttpClient = null;
+      aws4Signer = null;
+      awsCredentialsProvider = null;
+      errorHandler = null;
+      responseHandler = null;
     }
   }
 
@@ -118,5 +127,9 @@ public class KendraHttpClient {
   public URI buildRescoreURI() {
     return URI.create(String.join("/",
         serviceEndpoint, KENDRA_RESCORE_EXECUTION_PLANS, executionPlanId, KENDRA_RESCORE_URI));
+  }
+
+  public boolean isValid() {
+    return StringUtils.isNotEmpty(serviceEndpoint) && StringUtils.isNotEmpty(executionPlanId);
   }
 }

@@ -7,19 +7,25 @@
  */
 package org.opensearch.search.relevance.transformer;
 
-import java.util.List;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.common.settings.Setting;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfiguration;
+import org.opensearch.search.relevance.configuration.ResultTransformerConfigurationFactory;
+
+import java.util.List;
 
 public interface ResultTransformer {
-
   /**
-   * Get the list of settings required / supported by the transformer
+   * Get the list of settings supported by the transformer
    * @return list of transformer settings
    */
   List<Setting<?>> getTransformerSettings();
+
+  /**
+   * @return a factory able to construct configurations for this transformer.
+   */
+  ResultTransformerConfigurationFactory getConfigurationFactory();
 
   /**
    * Decide whether to apply the transformer on the input request

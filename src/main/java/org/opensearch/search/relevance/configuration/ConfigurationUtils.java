@@ -7,18 +7,18 @@
  */
 package org.opensearch.search.relevance.configuration;
 
-import static org.opensearch.search.relevance.configuration.Constants.RESULT_TRANSFORMER_SETTING_PREFIX;
+import org.opensearch.action.search.SearchRequest;
+import org.opensearch.common.settings.Settings;
+import org.opensearch.search.SearchExtBuilder;
+import org.opensearch.search.relevance.transformer.ResultTransformer;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.opensearch.action.search.SearchRequest;
-import org.opensearch.common.settings.Settings;
-import org.opensearch.search.SearchExtBuilder;
-import org.opensearch.search.relevance.transformer.ResultTransformerType;
-import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration;
+
+import static org.opensearch.search.relevance.configuration.Constants.RESULT_TRANSFORMER_SETTING_PREFIX;
 
 public class ConfigurationUtils {
 
@@ -27,16 +27,16 @@ public class ConfigurationUtils {
   * @param settings all index settings configured for this plugin
   * @return ordered and validated list of result transformers, empty list if not specified
   */
-  public static List<ResultTransformerConfiguration> getResultTransformersFromIndexConfiguration(
-      Settings settings) {
+  public static List<ResultTransformerConfiguration> getResultTransformersFromIndexConfiguration(Settings settings,
+                                                                                                 Map<String, ResultTransformer> resultTransformerMap) {
     List<ResultTransformerConfiguration> indexLevelConfigs = new ArrayList<>();
 
     if (settings != null) {
       if (settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX) != null) {
-        for (Map.Entry<String, Settings> resultTransformer : settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX).entrySet()) {
-          ResultTransformerType resultTransformerType = ResultTransformerType.fromString(resultTransformer.getKey());
-          if (ResultTransformerType.KENDRA_INTELLIGENT_RANKING.equals(resultTransformerType)) {
-            indexLevelConfigs.add(new KendraIntelligentRankingConfiguration(resultTransformer.getValue()));
+        for (Map.Entry<String, Settings> tranformerSettings : settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX).entrySet()) {
+          if (resultTransformerMap.containsKey(tranformerSettings.getKey())) {
+            ResultTransformer transformer = resultTransformerMap.get(tranformerSettings.getKey());
+            indexLevelConfigs.add(transformer.getConfigurationFactory().configureFromIndexSettings(tranformerSettings.getValue()));
           }
         }
       }
@@ -86,7 +86,7 @@ public class ConfigurationUtils {
     for (int i = 0; i < configs.size(); ++i) {
       if (configs.get(i).getOrder() != (i + 1)) {
         throw new IllegalArgumentException("Expected order [" + (i + 1) + "] for transformer [" +
-            configs.get(i).getType() + "], but found [" + configs.get(i).getOrder() + "]");
+            configs.get(i).getTransformerName() + "], but found [" + configs.get(i).getOrder() + "]");
       }
     }
 

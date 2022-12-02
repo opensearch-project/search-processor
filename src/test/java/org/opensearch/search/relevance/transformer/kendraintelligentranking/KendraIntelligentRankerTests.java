@@ -12,6 +12,7 @@ import org.mockito.Mockito;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.json.JsonXContent;
 import org.opensearch.index.query.MatchAllQueryBuilder;
@@ -20,6 +21,7 @@ import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfiguration;
+import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraClientSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraHttpClient;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration.KendraIntelligentRankingProperties;
@@ -39,6 +41,7 @@ import java.util.stream.Collectors;
 public class KendraIntelligentRankerTests extends OpenSearchTestCase {
     private static KendraHttpClient buildMockHttpClient(Function<RescoreRequest, RescoreResult> mockRescoreImpl) {
         KendraHttpClient kendraHttpClient = Mockito.mock(KendraHttpClient.class);
+        Mockito.when(kendraHttpClient.isValid()).thenReturn(true);
         Mockito.doAnswer(invocation -> {
             RescoreRequest rescoreRequest = invocation.getArgument(0);
             return mockRescoreImpl.apply(rescoreRequest);
@@ -102,6 +105,23 @@ public class KendraIntelligentRankerTests extends OpenSearchTestCase {
                 .source(new SearchSourceBuilder()
                         .sort("foo"));
         boolean shouldTransform = ranker.shouldTransform(originalRequest, new KendraIntelligentRankingConfiguration());
+        assertFalse(shouldTransform);
+    }
+
+    public void testShouldNotTransformWithInvalidClient() {
+        Settings emptySettings = Settings.builder().build();
+        KendraHttpClient invalidClient = new KendraHttpClient(KendraClientSettings.getClientSettings(emptySettings));
+        KendraIntelligentRanker ranker = new KendraIntelligentRanker(invalidClient);
+
+        // Otherwise valid search request:
+        SearchRequest originalRequest = new SearchRequest()
+                .source(new SearchSourceBuilder()
+                        .query(new MatchAllQueryBuilder()));
+        KendraIntelligentRankingProperties properties =
+                new KendraIntelligentRankingProperties(List.of("body"), List.of("title"), 10);
+
+        ResultTransformerConfiguration configuration = new KendraIntelligentRankingConfiguration(1, properties);
+        boolean shouldTransform = ranker.shouldTransform(originalRequest, configuration);
         assertFalse(shouldTransform);
     }
 

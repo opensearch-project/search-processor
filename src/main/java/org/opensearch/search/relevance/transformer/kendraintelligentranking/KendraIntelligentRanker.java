@@ -7,30 +7,20 @@
  */
 package org.opensearch.search.relevance.transformer.kendraintelligentranking;
 
-import static org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.Constants.BODY_FIELD;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.PriorityQueue;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.common.settings.Setting;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.SearchService;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfiguration;
+import org.opensearch.search.relevance.configuration.ResultTransformerConfigurationFactory;
 import org.opensearch.search.relevance.transformer.ResultTransformer;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraHttpClient;
+import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration;
+import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfigurationFactory;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.KendraIntelligentRankingException;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.PassageScore;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.Document;
@@ -42,19 +32,31 @@ import org.opensearch.search.relevance.transformer.kendraintelligentranking.prep
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.preprocess.QueryParser;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.preprocess.QueryParser.QueryParserResult;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.preprocess.TextTokenizer;
-import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.PriorityQueue;
+
+import static org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.Constants.BODY_FIELD;
 
 public class KendraIntelligentRanker implements ResultTransformer {
-  private static final int MAX_SENTENCE_LENGTH_IN_TOKENS = 35;
-  private static final int MIN_PASSAGE_LENGTH_IN_TOKENS = 100;
-  private static final int MAX_PASSAGE_COUNT = 10;
-  private static final int TITLE_TOKENS_TRIMMED = 15;
-  private static final int BODY_PASSAGE_TRIMMED = 200;
-  private static final double BM25_B_VALUE = 0.75;
-  private static final double BM25_K1_VALUE = 1.6;
-  private static final int TOP_K_PASSAGES = 3;
+    private static final int MAX_SENTENCE_LENGTH_IN_TOKENS = 35;
+    private static final int MIN_PASSAGE_LENGTH_IN_TOKENS = 100;
+    private static final int MAX_PASSAGE_COUNT = 10;
+    private static final int TITLE_TOKENS_TRIMMED = 15;
+    private static final int BODY_PASSAGE_TRIMMED = 200;
+    private static final double BM25_B_VALUE = 0.75;
+    private static final double BM25_K1_VALUE = 1.6;
+    private static final int TOP_K_PASSAGES = 3;
 
     private static final Logger logger = LogManager.getLogger(KendraIntelligentRanker.class);
+    public static final String NAME = "kendra_intelligent_ranking";
 
     private final KendraHttpClient kendraClient;
     private final TextTokenizer textTokenizer;
@@ -70,6 +72,13 @@ public class KendraIntelligentRanker implements ResultTransformer {
     public List<Setting<?>> getTransformerSettings() {
         return KendraIntelligentRankerSettings.getAllSettings();
     }
+
+
+    @Override
+    public ResultTransformerConfigurationFactory getConfigurationFactory() {
+        return KendraIntelligentRankingConfigurationFactory.INSTANCE;
+    }
+
 
     /**
      * Check if search request is eligible for rescore
@@ -88,6 +97,10 @@ public class KendraIntelligentRanker implements ResultTransformer {
         if (request.scroll() != null ||
                 (request.source().sorts() != null && !request.source().sorts().isEmpty()) ||
                 request.source().from() >= kendraConfiguration.getProperties().getDocLimit()) {
+            return false;
+        }
+        if (!kendraClient.isValid()) {
+            logger.warn("Kendra ranking endpoint was not configured. Skipping reranking.");
             return false;
         }
         return true;
@@ -153,7 +166,7 @@ public class KendraIntelligentRanker implements ResultTransformer {
                     throw new KendraIntelligentRankingException(errorMessage);
                 }
                 List<List<String>> passages = passageGenerator.generatePassages(docSourceMap.get(bodyFieldName).toString(),
-                    MAX_SENTENCE_LENGTH_IN_TOKENS, MIN_PASSAGE_LENGTH_IN_TOKENS, MAX_PASSAGE_COUNT);
+                        MAX_SENTENCE_LENGTH_IN_TOKENS, MIN_PASSAGE_LENGTH_IN_TOKENS, MAX_PASSAGE_COUNT);
                 List<List<String>> topPassages = getTopPassages(queryParserResult.getQueryText(), passages);
                 List<String> tokenizedTitle = null;
                 if (titleFieldName != null && docSourceMap.get(titleFieldName) != null) {
@@ -172,10 +185,10 @@ public class KendraIntelligentRanker implements ResultTransformer {
                     }
                     originalHitsAsDocuments.add(new Document(
                             originalHits.get(j).getId() + "@" + (i + 1),
-                                originalHits.get(j).getId(),
-                                tokenizedTitle,
-                                passageTokens,
-                                originalHits.get(j).getScore()));
+                            originalHits.get(j).getId(),
+                            tokenizedTitle,
+                            passageTokens,
+                            originalHits.get(j).getScore()));
                 }
                 // Map search hits by their ID in order to map Kendra response documents back to hits later
                 idToSearchHitMap.put(originalHits.get(j).getId(), originalHits.get(j));
@@ -194,16 +207,16 @@ public class KendraIntelligentRanker implements ResultTransformer {
                             rescoreResultItem.getDocumentId());
                     logger.error(errorMessage);
                     throw new KendraIntelligentRankingException(errorMessage);
-              }
-              searchHit.score(rescoreResultItem.getScore());
-              maxScore = Math.max(maxScore, rescoreResultItem.getScore());
-              newSearchHits.add(searchHit);
+                }
+                searchHit.score(rescoreResultItem.getScore());
+                maxScore = Math.max(maxScore, rescoreResultItem.getScore());
+                newSearchHits.add(searchHit);
             }
             // Add remaining hits to response, which are already sorted by OpenSearch score
             for (int i = numberOfHitsToRerank; i < originalHits.size(); ++i) {
-              newSearchHits.add(originalHits.get(i));
+                newSearchHits.add(originalHits.get(i));
             }
-            return new SearchHits(newSearchHits.toArray(new SearchHit[newSearchHits.size()]), hits.getTotalHits(), maxScore);
+            return new SearchHits(newSearchHits.toArray(new SearchHit[0]), hits.getTotalHits(), maxScore);
         } catch (Exception ex) {
             logger.error("Failed to rescore. Returning original search results without rescore.", ex);
             return hits;
@@ -213,7 +226,7 @@ public class KendraIntelligentRanker implements ResultTransformer {
     private List<List<String>> getTopPassages(final String queryText, final List<List<String>> passages) {
         List<String> query = textTokenizer.tokenize(queryText);
         BM25Scorer bm25Scorer = new BM25Scorer(BM25_B_VALUE, BM25_K1_VALUE, passages);
-        PriorityQueue<PassageScore> pq = new PriorityQueue<>(Comparator.comparingDouble(x -> x.getScore()));
+        PriorityQueue<PassageScore> pq = new PriorityQueue<>(Comparator.comparingDouble(PassageScore::getScore));
 
         for (int i = 0; i < passages.size(); i++) {
             double score = bm25Scorer.score(query, passages.get(i));
