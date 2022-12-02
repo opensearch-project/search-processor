@@ -30,17 +30,17 @@ public class KendraIntelligentRankingConfigurationFactory implements ResultTrans
     }
 
     @Override
-    public ResultTransformerConfiguration configureFromIndexSettings(Settings indexSettings) {
+    public ResultTransformerConfiguration configure(Settings indexSettings) {
         return new KendraIntelligentRankingConfiguration(indexSettings);
     }
 
     @Override
-    public ResultTransformerConfiguration configureFromSearchRequest(XContentParser parser) throws IOException {
+    public ResultTransformerConfiguration configure(XContentParser parser) throws IOException {
         return KendraIntelligentRankingConfiguration.parse(parser);
     }
 
     @Override
-    public ResultTransformerConfiguration configureFromStream(StreamInput streamInput) throws IOException {
+    public ResultTransformerConfiguration configure(StreamInput streamInput) throws IOException {
         return new KendraIntelligentRankingConfiguration(streamInput);
     }
 }

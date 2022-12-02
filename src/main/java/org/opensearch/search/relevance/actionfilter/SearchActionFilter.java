@@ -55,19 +55,15 @@ public class SearchActionFilter implements ActionFilter {
     private final int order;
 
     private final NamedWriteableRegistry namedWriteableRegistry;
-    private final Map<String, ResultTransformer> resultTransformerMap = new HashMap<>();
-    private final Map<String, ResultTransformerConfigurationFactory> configurationFactoryMap = new HashMap<>();
+    private final Map<String, ResultTransformer> resultTransformerMap;
     private final OpenSearchClient openSearchClient;
 
     public SearchActionFilter(Collection<ResultTransformer> supportedResultTransformers,
                               OpenSearchClient openSearchClient) {
         order = 10; // TODO: Finalize this value
         namedWriteableRegistry = new NamedWriteableRegistry(Collections.emptyList());
-        for (ResultTransformer resultTransformer : supportedResultTransformers) {
-            ResultTransformerConfigurationFactory configurationFactory = resultTransformer.getConfigurationFactory();
-            resultTransformerMap.put(configurationFactory.getName(), resultTransformer);
-            configurationFactoryMap.put(configurationFactory.getName(), configurationFactory);
-        }
+        resultTransformerMap = supportedResultTransformers.stream()
+                .collect(Collectors.toMap(t -> t.getConfigurationFactory().getName(), t -> t));
         this.openSearchClient = openSearchClient;
     }
 
@@ -160,11 +156,9 @@ public class SearchActionFilter implements ActionFilter {
         // Fetch all index settings for this plugin
         String[] settingNames = resultTransformerMap.values()
                 .stream()
-                .map(t -> t.getTransformerSettings()
+                .flatMap(t -> t.getTransformerSettings()
                         .stream()
-                        .map(Setting::getKey)
-                        .collect(Collectors.toList()))
-                .flatMap(Collection::stream)
+                        .map(Setting::getKey))
                 .toArray(String[]::new);
 
         configs = ConfigurationUtils.getResultTransformersFromIndexConfiguration(

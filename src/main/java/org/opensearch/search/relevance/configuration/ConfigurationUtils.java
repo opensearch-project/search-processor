@@ -33,10 +33,10 @@ public class ConfigurationUtils {
 
     if (settings != null) {
       if (settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX) != null) {
-        for (Map.Entry<String, Settings> tranformerSettings : settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX).entrySet()) {
-          if (resultTransformerMap.containsKey(tranformerSettings.getKey())) {
-            ResultTransformer transformer = resultTransformerMap.get(tranformerSettings.getKey());
-            indexLevelConfigs.add(transformer.getConfigurationFactory().configureFromIndexSettings(tranformerSettings.getValue()));
+        for (Map.Entry<String, Settings> transformerSettings : settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX).entrySet()) {
+          if (resultTransformerMap.containsKey(transformerSettings.getKey())) {
+            ResultTransformer transformer = resultTransformerMap.get(transformerSettings.getKey());
+            indexLevelConfigs.add(transformer.getConfigurationFactory().configure(transformerSettings.getValue()));
           }
         }
       }

@@ -233,17 +233,17 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         }
 
         @Override
-        public ResultTransformerConfiguration configureFromIndexSettings(Settings indexSettings) {
+        public ResultTransformerConfiguration configure(Settings indexSettings) {
             return MOCK_TRANSFORMER_CONFIGURATION;
         }
 
         @Override
-        public ResultTransformerConfiguration configureFromSearchRequest(XContentParser parser) {
+        public ResultTransformerConfiguration configure(XContentParser parser) {
             return MOCK_TRANSFORMER_CONFIGURATION;
         }
 
         @Override
-        public ResultTransformerConfiguration configureFromStream(StreamInput streamInput) {
+        public ResultTransformerConfiguration configure(StreamInput streamInput) {
             return MOCK_TRANSFORMER_CONFIGURATION;
         }
     };

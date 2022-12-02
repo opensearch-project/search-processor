@@ -77,12 +77,12 @@ public class SearchConfigurationExtBuilderTests extends OpenSearchTestCase {
         }
 
         @Override
-        public ResultTransformerConfiguration configureFromIndexSettings(Settings indexSettings) {
+        public ResultTransformerConfiguration configure(Settings indexSettings) {
             return null;
         }
 
         @Override
-        public ResultTransformerConfiguration configureFromSearchRequest(XContentParser parser) throws IOException {
+        public ResultTransformerConfiguration configure(XContentParser parser) throws IOException {
             XContentParser.Token token = parser.nextToken();
             assertSame(XContentParser.Token.FIELD_NAME, token);
             assertEquals("configuredValue", parser.currentName());
@@ -93,7 +93,7 @@ public class SearchConfigurationExtBuilderTests extends OpenSearchTestCase {
         }
 
         @Override
-        public ResultTransformerConfiguration configureFromStream(StreamInput streamInput) throws IOException {
+        public ResultTransformerConfiguration configure(StreamInput streamInput) throws IOException {
             return new MockResultTransformerConfiguration(streamInput.readString());
         }
     };

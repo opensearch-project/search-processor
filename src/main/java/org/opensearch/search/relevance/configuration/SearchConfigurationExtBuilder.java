@@ -43,7 +43,7 @@ public class SearchConfigurationExtBuilder extends SearchExtBuilder {
             if (transformer == null) {
                 throw new IllegalStateException("Unknown result transformer " + transformerName);
             }
-            resultTransformerConfigurations.add(transformer.configureFromStream(input));
+            resultTransformerConfigurations.add(transformer.configure(input));
         }
     }
 
@@ -85,7 +85,7 @@ public class SearchConfigurationExtBuilder extends SearchExtBuilder {
                         } else if (currentFieldName != null) {
                             if (resultTransformerMap.containsKey(currentFieldName)) {
                                 ResultTransformerConfiguration configuration =
-                                        resultTransformerMap.get(currentFieldName).configureFromSearchRequest(parser);
+                                        resultTransformerMap.get(currentFieldName).configure(parser);
                                 extBuilder.addResultTransformer(configuration);
                             } else {
                                 throw new IllegalArgumentException(
