@@ -1,5 +1,5 @@
-[![Build and Test Search Reranker](https://github.com/opensearch-project/search-relevance/actions/workflows/CI.yml/badge.svg)](https://github.com/opensearch-project/search-relevance/actions/workflows/CI.yml)
-[![codecov](https://codecov.io/gh/opensearch-project/search-relevance/branch/main/graph/badge.svg?token=PYQO2GW39S)](https://codecov.io/gh/opensearch-project/search-relevance)
+[![Build and Test Search Reranker](https://github.com/opensearch-project/search-processor/actions/workflows/CI.yml/badge.svg)](https://github.com/opensearch-project/search-processor/actions/workflows/CI.yml)
+[![codecov](https://codecov.io/gh/opensearch-project/search-processor/branch/main/graph/badge.svg?token=PYQO2GW39S)](https://codecov.io/gh/opensearch-project/search-processor)
 ![PRs welcome!](https://img.shields.io/badge/PRs-welcome!-success)
 
 # OpenSearch Search Relevance - Reranker

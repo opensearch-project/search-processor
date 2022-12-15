@@ -37,7 +37,7 @@ Overall the Relevancy Engineering can be divided into two tiers:
         1. Manage business rules, ontologies and manual judgments.  
     4. Relevancy workbench:
         1. Improve algorithms with automated testing, relevance model trainings, personalizations and custom re-rankers. 
-### [RFC Search Relevance](https://github.com/opensearch-project/search-relevance/issues/1)
+### [RFC Search Relevance](https://github.com/opensearch-project/search-processor/issues/1)
 
 ## Contributing
 
