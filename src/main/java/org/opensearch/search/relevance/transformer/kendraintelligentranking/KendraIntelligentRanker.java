@@ -46,6 +46,7 @@ import java.util.PriorityQueue;
 import static org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.Constants.BODY_FIELD;
 
 public class KendraIntelligentRanker implements ResultTransformer {
+    public static final String NAME = "kendra_intelligent_ranking";
     private static final int MAX_SENTENCE_LENGTH_IN_TOKENS = 35;
     private static final int MIN_PASSAGE_LENGTH_IN_TOKENS = 100;
     private static final int MAX_PASSAGE_COUNT = 10;
@@ -56,7 +57,6 @@ public class KendraIntelligentRanker implements ResultTransformer {
     private static final int TOP_K_PASSAGES = 3;
 
     private static final Logger logger = LogManager.getLogger(KendraIntelligentRanker.class);
-    public static final String NAME = "kendra_intelligent_ranking";
 
     private final KendraHttpClient kendraClient;
     private final TextTokenizer textTokenizer;

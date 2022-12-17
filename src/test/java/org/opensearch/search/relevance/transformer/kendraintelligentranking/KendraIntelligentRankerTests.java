@@ -23,6 +23,7 @@ import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfiguration;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraClientSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraHttpClient;
+import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration.KendraIntelligentRankingProperties;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreRequest;
@@ -111,6 +112,21 @@ public class KendraIntelligentRankerTests extends OpenSearchTestCase {
     public void testShouldNotTransformWithInvalidClient() {
         Settings emptySettings = Settings.builder().build();
         KendraHttpClient invalidClient = new KendraHttpClient(KendraClientSettings.getClientSettings(emptySettings));
+        testWithInvalidClient(new KendraHttpClient(KendraClientSettings.getClientSettings(emptySettings)));
+
+        Settings settingsWithExecutionPlan = Settings.builder()
+                .put(KendraIntelligentRankerSettings.EXECUTION_PLAN_ID_SETTING.getKey(), "foo-plan")
+                .build();
+        testWithInvalidClient(new KendraHttpClient(KendraClientSettings.getClientSettings(settingsWithExecutionPlan)));
+
+        Settings settingsWithEndpoint = Settings.builder()
+                .put(KendraIntelligentRankerSettings.SERVICE_ENDPOINT_SETTING.getKey(),
+                        "https://kendra-ranking.us-west-2.api.aws")
+                .build();
+        testWithInvalidClient(new KendraHttpClient(KendraClientSettings.getClientSettings(settingsWithEndpoint)));
+    }
+
+    private void testWithInvalidClient(KendraHttpClient invalidClient) {
         KendraIntelligentRanker ranker = new KendraIntelligentRanker(invalidClient);
 
         // Otherwise valid search request:
@@ -205,12 +221,12 @@ public class KendraIntelligentRankerTests extends OpenSearchTestCase {
             rescoreRequestRef.set(req);
             // Return the top N results in reverse order.
             List<RescoreResultItem> resultItems = req.getDocuments().stream()
-                            .map(d -> {
-                                RescoreResultItem item = new RescoreResultItem();
-                                item.setDocumentId(d.getGroupId());
-                                item.setScore(randomFloat());
-                                return item;
-                            }).collect(Collectors.toList());
+                    .map(d -> {
+                        RescoreResultItem item = new RescoreResultItem();
+                        item.setDocumentId(d.getGroupId());
+                        item.setScore(randomFloat());
+                        return item;
+                    }).collect(Collectors.toList());
             Collections.reverse(resultItems);
             RescoreResult result = new RescoreResult();
             result.setResultItems(resultItems);

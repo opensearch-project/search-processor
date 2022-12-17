@@ -34,7 +34,6 @@ import org.opensearch.search.profile.SearchProfileShardResults;
 import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.configuration.ConfigurationUtils;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfiguration;
-import org.opensearch.search.relevance.configuration.ResultTransformerConfigurationFactory;
 import org.opensearch.search.relevance.transformer.ResultTransformer;
 import org.opensearch.tasks.Task;
 
@@ -42,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;

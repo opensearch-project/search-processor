@@ -18,7 +18,6 @@ import java.io.IOException;
 
 public class KendraIntelligentRankingConfigurationFactory implements ResultTransformerConfigurationFactory {
     private KendraIntelligentRankingConfigurationFactory() {
-
     }
 
     public static final KendraIntelligentRankingConfigurationFactory INSTANCE =

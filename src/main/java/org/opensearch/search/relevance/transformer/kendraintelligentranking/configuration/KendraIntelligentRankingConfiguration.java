@@ -36,7 +36,7 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
   private static final ObjectParser<KendraIntelligentRankingConfiguration, Void> PARSER;
 
   static {
-    PARSER = new ObjectParser<KendraIntelligentRankingConfiguration, Void>("kendra_intelligent_ranking_configuration", KendraIntelligentRankingConfiguration::new);
+    PARSER = new ObjectParser<>("kendra_intelligent_ranking_configuration", KendraIntelligentRankingConfiguration::new);
     PARSER.declareInt(TransformerConfiguration::setOrder, TRANSFORMER_ORDER);
     PARSER.declareObject(KendraIntelligentRankingConfiguration::setProperties,
             KendraIntelligentRankingProperties::parse,

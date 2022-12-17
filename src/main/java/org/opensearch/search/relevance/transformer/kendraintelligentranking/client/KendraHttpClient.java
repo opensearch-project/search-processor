@@ -57,7 +57,7 @@ public class KendraHttpClient {
   public KendraHttpClient(KendraClientSettings clientSettings) {
     serviceEndpoint = clientSettings.getServiceEndpoint();
     executionPlanId = clientSettings.getExecutionPlanId();
-    if (StringUtils.isNotEmpty(serviceEndpoint) && StringUtils.isNotEmpty(executionPlanId)) {
+    if (isValid()) {
       amazonHttpClient = AccessController.doPrivileged((PrivilegedAction<AmazonHttpClient>) () -> new AmazonHttpClient(new ClientConfiguration()));
       errorHandler = new SimpleAwsErrorHandler();
       responseHandler = new SimpleResponseHandler();
