@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.opensearch.action.support.ActionFilter;
 import org.opensearch.client.Client;
@@ -30,14 +31,15 @@ import org.opensearch.plugins.SearchPlugin;
 import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.script.ScriptService;
 import org.opensearch.search.relevance.actionfilter.SearchActionFilter;
-import org.opensearch.search.relevance.transformer.ResultTransformerType;
+import org.opensearch.search.relevance.client.OpenSearchClient;
+import org.opensearch.search.relevance.configuration.ResultTransformerConfigurationFactory;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraClientSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraHttpClient;
-import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.configuration.SearchConfigurationExtBuilder;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.KendraIntelligentRanker;
 import org.opensearch.search.relevance.transformer.ResultTransformer;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings;
+import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfigurationFactory;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.watcher.ResourceWatcherService;
 
@@ -47,9 +49,13 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
   private KendraHttpClient kendraClient;
   private KendraIntelligentRanker kendraIntelligentRanker;
 
-  private Map<ResultTransformerType, ResultTransformer> getAllResultTransformers() {
+  private Collection<ResultTransformer> getAllResultTransformers() {
     // Initialize and add other transformers here
-    return Map.of(ResultTransformerType.KENDRA_INTELLIGENT_RANKING, this.kendraIntelligentRanker);
+    return List.of(this.kendraIntelligentRanker);
+  }
+
+  private Collection<ResultTransformerConfigurationFactory> getResultTransformerConfigurationFactories() {
+    return List.of(KendraIntelligentRankingConfigurationFactory.INSTANCE);
   }
   
   @Override
@@ -93,8 +99,12 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
 
   @Override
   public List<SearchExtSpec<?>> getSearchExts() {
+    Map<String, ResultTransformerConfigurationFactory> resultTransformerMap = getResultTransformerConfigurationFactories().stream()
+            .collect(Collectors.toMap(ResultTransformerConfigurationFactory::getName, i -> i));
     return Collections.singletonList(
-        new SearchExtSpec<>(SearchConfigurationExtBuilder.NAME, SearchConfigurationExtBuilder::new, SearchConfigurationExtBuilder::parse));
+        new SearchExtSpec<>(SearchConfigurationExtBuilder.NAME,
+                input -> new SearchConfigurationExtBuilder(input, resultTransformerMap),
+                parser -> SearchConfigurationExtBuilder.parse(parser, resultTransformerMap)));
   }
   
 }

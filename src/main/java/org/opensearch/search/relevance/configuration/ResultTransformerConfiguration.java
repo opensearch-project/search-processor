@@ -7,10 +7,7 @@
  */
 package org.opensearch.search.relevance.configuration;
 
-import org.opensearch.search.relevance.transformer.ResultTransformerType;
-
 public abstract class ResultTransformerConfiguration extends TransformerConfiguration {
 
-  public abstract ResultTransformerType getType();
-
+  public abstract String getTransformerName();
 }
