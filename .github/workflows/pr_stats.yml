@@ -9,7 +9,7 @@ jobs:
       - name: Run pull request stats
         uses: flowwer-dev/pull-request-stats@master
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.APP_PRIVATE_KEY }}
           period: 30
           charts: true
           disable-links: true
