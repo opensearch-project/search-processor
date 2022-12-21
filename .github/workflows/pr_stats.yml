@@ -1,6 +1,8 @@
 name: Pull Request Stats
 
-on: pull_request
+on:
+  pull_request:
+    types: [opened]
 
 jobs:
   stats:
@@ -8,9 +10,3 @@ jobs:
     steps:
       - name: Run pull request stats
         uses: flowwer-dev/pull-request-stats@master
-        with:
-          token: ${{ secrets.APP_PRIVATE_KEY }}
-          period: 30
-          charts: true
-          disable-links: true
-          sort-by: 'COMMENTS'
