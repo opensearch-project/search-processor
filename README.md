@@ -1,8 +1,8 @@
-[![Build and Test Search Reranker](https://github.com/opensearch-project/search-processor/actions/workflows/CI.yml/badge.svg)](https://github.com/opensearch-project/search-processor/actions/workflows/CI.yml)
+[![Build and Test Search Query & Request Transformers](https://github.com/opensearch-project/search-processor/actions/workflows/CI.yml/badge.svg)](https://github.com/opensearch-project/search-processor/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/opensearch-project/search-processor/branch/main/graph/badge.svg?token=PYQO2GW39S)](https://codecov.io/gh/opensearch-project/search-processor)
 ![PRs welcome!](https://img.shields.io/badge/PRs-welcome!-success)
 
-# OpenSearch Search Relevance - Reranker
+# Search Query & Request Transformers
 - [Welcome!](#welcome)
 - [Project Resources](#project-resources)
 - [Credits and  Acknowledgments](#credits-and-acknowledgments)
@@ -11,7 +11,9 @@
 - [Copyright](#copyright)
 
 ## Welcome!
-This repository currently hosts a plugin to rerank search results before returning them to the client inline. The current plan is to expand this functionality to allow users to add rewriters, rerankers, and log what those components do. 
+This repository is the home of an evolving project to create a pipeline of transformers to preprocess search queries before information retrieval and post-process results after information retrieval. The first component here is hosts a plugin to re-rank search results before returning them to the client inline. In the coming year, we will add hooks to configure other re-rankers, and allow users to add their own components to the pipeline. Logging will also be a critical part of the pipeline in two ways: 1) Logging information about the search experience (e.g. query, search results returned from the index, search results returned to the OpenSearch client); 2) Logging debug information about the transformers. 
+
+We will be publishing an RFC soon to give more detail and have a deeper conversation, but for now take a look at the code, open issues, comment, etc.
 
 # History
 This repository has also been used for discussion and ideas around search relevance. These discussions still exist here, however due to the relatively new standard of having one repo per plugin in OpenSearch and our implementations beginning to make it into the OpenSearch build, we have two repositories now. This repository will develop into a plugin that will allow OpenSearch users to rewrite search queries, rerank results, and log data about those actions. The other repository, [dashboards-search-relevance](https://www.github.com/opensearch-projects/dashboards-search-relevance), is where we will build front-end tooling to help relevance engineers and business users tune results. 
