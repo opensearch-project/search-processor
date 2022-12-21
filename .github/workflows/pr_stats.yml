@@ -1,9 +1,6 @@
 name: Pull Request Stats
 
-on:
-  pull_request:
-    types: [opened]
-  workflow_dispatch:
+on: pull_request
 
 jobs:
   stats:
