@@ -25,7 +25,7 @@ jobs:
         
       - name: Edit the issue template
         run: |
-          echo "https://github.com/opensearch-project/k-NN/pull/${{ env.PR_NUMBER }}." >> ./.github/ISSUE_TEMPLATE/documentation-issue.md
+          echo "https://github.com/opensearch-project/search-processor/pull/${{ env.PR_NUMBER }}." >> ./.github/ISSUE_TEMPLATE/documentation-issue.md
           
       - name: Create Issue From File
         id: create-issue
