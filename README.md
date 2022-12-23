@@ -11,7 +11,9 @@
 - [Copyright](#copyright)
 
 ## Welcome!
-This repository is the home of an evolving project to create a pipeline of transformers to preprocess search queries before information retrieval and post-process results after information retrieval. The first component here is hosts a plugin to re-rank search results before returning them to the client inline. In the coming year, we will add hooks to configure other re-rankers, and allow users to add their own components to the pipeline. Logging will also be a critical part of the pipeline in two ways: 1) Logging information about the search experience (e.g. query, search results returned from the index, search results returned to the OpenSearch client); 2) Logging debug information about the transformers. 
+This repository is the home of an evolving project that aims to create a pipeline of transformers to preprocess queries before search and post-process results after search. The first component here is a plugin to re-rank search results before returning them to the client inline. In the coming year, we will add hooks to configure other re-rankers and allow users to add their own components to the pipeline. Logging will also be a critical part of the pipeline in two ways: 
+1. Logging information about the search experience (e.g. query, search results returned from the index, search results returned to the OpenSearch client) 
+1. Logging debug information about the transformers
 
 We will be publishing an RFC soon to give more detail and have a deeper conversation, but for now take a look at the code, open issues, comment, etc.
 
