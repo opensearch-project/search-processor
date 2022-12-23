@@ -5,7 +5,6 @@
 # OpenSearch Search Relevance - Reranker
 - [Welcome!](#welcome)
 - [Project Resources](#project-resources)
-- [Credits and  Acknowledgments](#credits-and-acknowledgments)
 - [Code of Conduct](#code-of-conduct)
 - [License](#license)
 - [Copyright](#copyright)
@@ -19,8 +18,8 @@ This repository has also been used for discussion and ideas around search releva
 
 ## Project Resources
 
-* [Project Website](https://opensearch.org/)
-* [Downloads](https://opensearch.org/downloads.html).
+* [OpenSearch Project Website](https://opensearch.org/)
+* [Downloads](https://opensearch.org/downloads.html)
 * [Project Principles](https://opensearch.org/#principles)
 * [Contributing to OpenSearch Search Request Processor](CONTRIBUTING.md)
 * [Search Relevance](RELEVANCE.md)
