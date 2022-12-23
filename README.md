@@ -1,3 +1,5 @@
+Forcing a pr_stats review.
+
 [![Build and Test Search Query & Request Transformers](https://github.com/opensearch-project/search-processor/actions/workflows/CI.yml/badge.svg)](https://github.com/opensearch-project/search-processor/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/opensearch-project/search-processor/branch/main/graph/badge.svg?token=PYQO2GW39S)](https://codecov.io/gh/opensearch-project/search-processor)
 ![PRs welcome!](https://img.shields.io/badge/PRs-welcome!-success)
