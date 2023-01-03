@@ -1,6 +1,6 @@
 - [Developer Guide](#developer-guide)
   - [Getting Started](#getting-started)
-    - [Fork OpenSearch search-relevance Repo](#fork-opensearch-search-processor-repo)
+    - [Fork OpenSearch search-processor Repo](#fork-opensearch-search-processor-repo)
     - [Install Prerequisites](#install-prerequisites)
       - [JDK 11](#jdk-11)
       - [Environment](#Environment)
@@ -23,11 +23,11 @@ So you want to contribute code to OpenSearch Search Processor? Excellent! We're 
 
 ### Fork OpenSearch Search Processor Repo
 
-Fork [opensearch-project/OpenSearch Search Processor](https://github.com/opensearch-project/search-relevance) and clone locally.
+Fork [opensearch-project/OpenSearch Search Processor](https://github.com/opensearch-project/search-processor) and clone locally.
 
 Example:
 ```
-git clone https://github.com/[your username]/search-relevance.git
+git clone https://github.com/[your username]/search-processor.git
 ```
 
 ### Install Prerequisites

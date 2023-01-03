@@ -30,7 +30,7 @@ publishing {
                 developers {
                     developer {
                         name = "OpenSearch"
-                        url = "https://github.com/opensearch-project/search-relevance"
+                        url = "https://github.com/opensearch-project/search-processor"
                     }
                 }
             }
