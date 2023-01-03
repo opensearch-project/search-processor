@@ -29,7 +29,7 @@ public class KendraIntelligentRankerSettings {
    */
   static final class FieldValidator implements Setting.Validator<List<String>> {
 
-    private String settingName;
+    private final String settingName;
 
     public FieldValidator(final String name) {
       this.settingName = name;
@@ -48,7 +48,7 @@ public class KendraIntelligentRankerSettings {
    */
   static final class DocLimitValidator implements Setting.Validator<Integer> {
 
-    private String settingName;
+    private final String settingName;
 
     public DocLimitValidator(final String name) {
       this.settingName = name;
@@ -115,7 +115,7 @@ public class KendraIntelligentRankerSettings {
 
   public static final Setting<String> ASSUME_ROLE_ARN_SETTING = Setting.simpleString("kendra_intelligent_ranking.service.assume_role_arn", Setting.Property.NodeScope);
 
-  public static final List<Setting<?>> getAllSettings() {
+  public static List<Setting<?>> getAllSettings() {
     return Arrays.asList(
       KENDRA_ORDER_SETTING,
       KENDRA_BODY_FIELD_SETTING,

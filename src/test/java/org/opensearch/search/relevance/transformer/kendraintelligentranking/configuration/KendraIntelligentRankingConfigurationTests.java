@@ -15,7 +15,7 @@ import java.io.IOException;
 public class KendraIntelligentRankingConfigurationTests extends OpenSearchTestCase {
     public void testParseWithNullParserAndContext() {
         try {
-            KendraIntelligentRankingConfiguration.parse(null, null);
+            KendraIntelligentRankingConfiguration.parse(null);
             fail();
         } catch (NullPointerException | IOException e) {
         }
