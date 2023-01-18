@@ -106,7 +106,8 @@ done
 
 FAILED_VALIDATION=0
 if [ -z "${EXECUTION_PLAN_ID:-}" ] && [ -z "${CREATE_EXECUTION_PLAN:-}" ]; then
-  >&2 echo "Missing argument [-p | --execution-plan] or --create-execution-plan"
+  >&2 echo "Kendra Intelligent Ranking Rescore Execution Plan ID is required. Provide one using the argument [-p | --execution-plan]"\
+    " or provision one using --create-execution-plan"
   FAILED_VALIDATION=1
 elif [ -n "${EXECUTION_PLAN_ID:-}" ] && [ -n "${CREATE_EXECUTION_PLAN:-}" ]; then
   >&2 echo "You cannot specify both [-p | --execution-plan] and --create-execution-plan"
@@ -199,7 +200,8 @@ fi
 #
 if [ -z "${KENDRA_RANKING_ENDPOINT:-}" ]; then
   KENDRA_RANKING_ENDPOINT="https://kendra-ranking.${AWS_REGION}.api.aws"
-  echo "Missing argument [-e | --kendra-ranking-endpoint] -- using ${KENDRA_RANKING_ENDPOINT}"
+  echo "Using Kendra Intelligent Ranking endpoint ${KENDRA_RANKING_ENDPOINT}."\
+    "To override, use the [-e | --kendra-ranking-endpoint] argument to specify your endpoint URL."
 fi
 
 #
