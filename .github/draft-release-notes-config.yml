@@ -17,24 +17,35 @@ categories:
   - title: 'Breaking Changes'
     labels:
       - 'Breaking Changes'
+  - title: 'Security'
+    labels:
+      - 'Security'
+      - 'security fix'
+      - 'security vulnerability'
   - title: 'Features'
     labels:
       - 'Features'
   - title: 'Enhancements'
     labels:
       - 'Enhancements'
+      - 'enhancement'
   - title: 'Bug Fixes'
     labels:
       - 'Bug Fixes'
+      - 'bug'
   - title: 'Infrastructure'
     labels:
       - 'Infrastructure'
+      - 'configuration error'
   - title: 'Documentation'
     labels:
       - 'Documentation'
+      - 'documentation'
   - title: 'Maintenance'
     labels:
       - 'Maintenance'
+      - 'meta'
+      - 'release'
   - title: 'Refactoring'
     labels:
       - 'Refactoring'
