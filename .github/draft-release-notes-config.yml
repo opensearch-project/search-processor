@@ -16,13 +16,13 @@ replacers:
 categories:
   - title: 'Breaking Changes'
     labels:
-      - 'breaking changes'
+      - 'breaking'
   - title: 'Security'
     labels:
       - 'security fix'
   - title: 'Features'
     labels:
-      - 'features'
+      - 'feature'
   - title: 'Enhancements'
     labels:
       - 'enhancement'
