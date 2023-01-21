@@ -16,25 +16,28 @@ replacers:
 categories:
   - title: 'Breaking Changes'
     labels:
-      - 'Breaking Changes'
+      - 'breaking'
+  - title: 'Security'
+    labels:
+      - 'security fix'
   - title: 'Features'
     labels:
-      - 'Features'
+      - 'feature'
   - title: 'Enhancements'
     labels:
-      - 'Enhancements'
+      - 'enhancement'
   - title: 'Bug Fixes'
     labels:
-      - 'Bug Fixes'
+      - 'bug'
   - title: 'Infrastructure'
     labels:
-      - 'Infrastructure'
+      - 'infrastructure'
   - title: 'Documentation'
     labels:
-      - 'Documentation'
+      - 'documentation'
   - title: 'Maintenance'
     labels:
-      - 'Maintenance'
+      - 'maintenance'
   - title: 'Refactoring'
     labels:
-      - 'Refactoring'
+      - 'refactoring'
