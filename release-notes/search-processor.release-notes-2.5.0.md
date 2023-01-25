@@ -27,6 +27,7 @@ Compatible with OpenSearch (2.5.0).
 * Updated MAINTAINERS.md format. ([#77](https://github.com/opensearch-project/search-processor/pull/77))
 * adding Mingshi Liu as a maintainer to the repo ([#86](https://github.com/opensearch-project/search-processor/pull/86))
 * Add release-notes folder and 2.4.0 md file ([#89](https://github.com/opensearch-project/search-processor/pull/89))
+* Add release note for 2.5.0 ([#95](https://github.com/opensearch-project/search-processor/pull/95))
 
 ### Maintenance
 
