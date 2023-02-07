@@ -29,6 +29,8 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.ByteArrayInputStream;
+import java.io.Closeable;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
@@ -38,7 +40,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreRequest;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreResult;
 
-public class KendraHttpClient {
+public class KendraHttpClient implements Closeable {
   private static final String KENDRA_RANKING_SERVICE_NAME = "kendra-ranking";
   private static final String KENDRA_RESCORE_URI = "rescore";
   private static final String KENDRA_RESCORE_EXECUTION_PLANS = "rescore-execution-plans";
@@ -131,5 +133,12 @@ public class KendraHttpClient {
 
   public boolean isValid() {
     return StringUtils.isNotEmpty(serviceEndpoint) && StringUtils.isNotEmpty(executionPlanId);
+  }
+
+  @Override
+  public void close() throws IOException {
+    if (amazonHttpClient != null) {
+      amazonHttpClient.shutdown();
+    }
   }
 }

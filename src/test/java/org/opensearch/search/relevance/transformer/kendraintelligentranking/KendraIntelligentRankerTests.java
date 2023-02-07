@@ -17,6 +17,7 @@ import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.json.JsonXContent;
 import org.opensearch.index.query.MatchAllQueryBuilder;
 import org.opensearch.index.query.MatchQueryBuilder;
+import org.opensearch.index.query.MultiMatchQueryBuilder;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.builder.SearchSourceBuilder;
@@ -26,6 +27,7 @@ import org.opensearch.search.relevance.transformer.kendraintelligentranking.clie
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration.KendraIntelligentRankingProperties;
+import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.KendraIntelligentRankingException;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreRequest;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreResult;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreResultItem;
@@ -35,6 +37,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -111,8 +114,8 @@ public class KendraIntelligentRankerTests extends OpenSearchTestCase {
 
     public void testShouldNotTransformWithInvalidClient() {
         Settings emptySettings = Settings.builder().build();
-        KendraHttpClient invalidClient = new KendraHttpClient(KendraClientSettings.getClientSettings(emptySettings));
-        testWithInvalidClient(new KendraHttpClient(KendraClientSettings.getClientSettings(emptySettings)));
+        KendraHttpClient emptyClient = new KendraHttpClient(KendraClientSettings.getClientSettings(emptySettings));
+        testWithInvalidClient(emptyClient);
 
         Settings settingsWithExecutionPlan = Settings.builder()
                 .put(KendraIntelligentRankerSettings.EXECUTION_PLAN_ID_SETTING.getKey(), "foo-plan")
@@ -193,9 +196,36 @@ public class KendraIntelligentRankerTests extends OpenSearchTestCase {
         assertSame(searchHits, transformedHits);
     }
 
-    public void testTransformHits() throws IOException {
+    public void testDoesNotTransformIfMissingBodyField() throws IOException {
         SearchRequest originalRequest = new SearchRequest()
                 .source(new SearchSourceBuilder().query(new MatchQueryBuilder("body", "foo")));
+
+        int docLimit = randomIntBetween(1, 20);
+        KendraIntelligentRankingProperties properties =
+                new KendraIntelligentRankingProperties(List.of("body"), List.of("title"), docLimit);
+        ResultTransformerConfiguration configuration = new KendraIntelligentRankingConfiguration(1, properties);
+        SearchHit[] hitsArray = new SearchHit[]{
+                new SearchHit(1, "doc1", Map.of(), Map.of())
+                        .sourceRef(BytesReference.bytes(JsonXContent.contentBuilder()
+                        .startObject()
+                        .field("_id", "1")
+                        .field("title", "This is the title for document 1")
+                        .endObject()))
+        };
+        SearchHits searchHits = new SearchHits(hitsArray, new TotalHits(1, TotalHits.Relation.EQUAL_TO), 1.0f);
+
+        AtomicBoolean didTransform = new AtomicBoolean(false);
+        KendraIntelligentRanker ranker = new KendraIntelligentRanker(buildMockHttpClient(r -> {
+            didTransform.set(true);
+            return new RescoreResult();
+        }));
+        ranker.transform(searchHits, originalRequest, configuration);
+        assertFalse(didTransform.get());
+    }
+
+    public void testTransformHits() throws IOException {
+        SearchRequest originalRequest = new SearchRequest()
+                .source(new SearchSourceBuilder().query(new MultiMatchQueryBuilder("foo", "body", "title")));
 
         int docLimit = randomIntBetween(1, 20);
         KendraIntelligentRankingProperties properties =
@@ -243,6 +273,11 @@ public class KendraIntelligentRankerTests extends OpenSearchTestCase {
         for (int i = docLimit; i < numHits; i++) {
             assertEquals("doc" + i, transformedHits.getHits()[i].getId());
         }
+
+        SearchRequest bodyOnlyRequest = new SearchRequest()
+                .source(new SearchSourceBuilder().query(new MatchQueryBuilder("body", "foo")));
+        SearchHits bodyOnlyTransformedHits = ranker.transform(searchHits, bodyOnlyRequest, configuration);
+        assertArrayEquals(transformedHits.getHits(), bodyOnlyTransformedHits.getHits());
     }
 
 }
