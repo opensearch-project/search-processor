@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
 
 import java.util.List;
+import java.util.Objects;
 
 @JsonNaming(PropertyNamingStrategies.UpperCamelCaseStrategy.class)
 public class Document {
@@ -28,6 +29,12 @@ public class Document {
     this.tokenizedTitle = tokenizedTitle;
     this.tokenizedBody = tokenizedBody;
     this.originalScore = originalScore;
+  }
+
+  /**
+   * No-args constructor used to deserialize.
+   */
+  public Document() {
   }
 
   public String getId() {
@@ -68,5 +75,18 @@ public class Document {
 
   public void setOriginalScore(Float originalScore) {
     this.originalScore = originalScore;
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    Document document = (Document) o;
+    return Objects.equals(id, document.id) && Objects.equals(groupId, document.groupId) && Objects.equals(tokenizedTitle, document.tokenizedTitle) && Objects.equals(tokenizedBody, document.tokenizedBody) && Objects.equals(originalScore, document.originalScore);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(id, groupId, tokenizedTitle, tokenizedBody, originalScore);
   }
 }
