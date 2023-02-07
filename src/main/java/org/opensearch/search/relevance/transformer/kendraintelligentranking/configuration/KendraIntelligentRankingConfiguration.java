@@ -76,7 +76,7 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
     this.properties.writeTo(out);
   }
 
-  public static ResultTransformerConfiguration parse(XContentParser parser) throws IOException {
+  public static KendraIntelligentRankingConfiguration parse(XContentParser parser) throws IOException {
     try {
       KendraIntelligentRankingConfiguration configuration = PARSER.parse(parser, null);
       if (configuration != null && configuration.getOrder() <= 0) {
@@ -154,7 +154,7 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
 
     public KendraIntelligentRankingProperties(StreamInput input) throws IOException {
       this.bodyFields = input.readStringList();
-      this.bodyFields = input.readStringList();
+      this.titleFields = input.readStringList();
       this.docLimit = input.readInt();
     }
 
@@ -195,8 +195,8 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
 
       KendraIntelligentRankingProperties properties = (KendraIntelligentRankingProperties) o;
 
-      return (bodyFields == properties.bodyFields) && (titleFields == properties.titleFields) &&
-          (docLimit == properties.docLimit);
+      return bodyFields.equals(properties.bodyFields) && titleFields.equals(properties.titleFields) &&
+          docLimit == properties.docLimit;
     }
 
     @Override
@@ -227,5 +227,6 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
     public void setDocLimit(final int docLimit) {
       this.docLimit = docLimit;
     }
+
   }
 }
