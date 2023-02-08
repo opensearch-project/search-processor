@@ -21,12 +21,4 @@ public enum TransformerType {
     return type;
   }
 
-  public static TransformerType fromString(String type) {
-    for (TransformerType transformerType : values()) {
-      if (transformerType.type.equalsIgnoreCase(type)) {
-        return transformerType;
-      }
-    }
-    throw new IllegalArgumentException("Unrecognized Transformer type [" + type + "]");
-  }
 }

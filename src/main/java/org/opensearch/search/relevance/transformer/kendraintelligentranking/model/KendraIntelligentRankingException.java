@@ -20,11 +20,4 @@ public class KendraIntelligentRankingException extends OpenSearchException {
     super(message);
   }
 
-  public KendraIntelligentRankingException(String message, Throwable cause) {
-    super(message, cause);
-  }
-
-  public KendraIntelligentRankingException(String message, Throwable cause, Object... args) {
-    super(message, cause, args);
-  }
 }
