@@ -38,7 +38,7 @@ publishing {
     }
 }
 opensearchplugin {
-    name pluginName
+    name "opensearch-${pluginName}-${opensearch_version}.0"
     description pluginDescription
     classname "${projectPath}.${pathToPlugin}.${pluginClassName}"
     licenseFile rootProject.file('LICENSE')
