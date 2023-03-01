@@ -48,7 +48,7 @@ public class KendraIntelligentRankingConfigurationTests extends OpenSearchTestCa
     }
 
     private static KendraIntelligentRankingConfiguration getKendraIntelligentRankingConfiguration() {
-        int order = randomInt(10);
+        int order = randomInt(10) + 1;
         int docLimit = randomInt( Integer.MAX_VALUE - 25) + 25;
         KendraIntelligentRankingConfiguration.KendraIntelligentRankingProperties properties =
                 new KendraIntelligentRankingConfiguration.KendraIntelligentRankingProperties(List.of("body1"),
