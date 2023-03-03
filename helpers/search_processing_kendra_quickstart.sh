@@ -20,7 +20,7 @@ if [ -z "${OPENSEARCH_DASHBOARDS_IMAGE_TAG:-}" ]; then
   OPENSEARCH_DASHBOARDS_IMAGE_TAG="opensearchproject/opensearch-dashboards:${OPENSEARCH_VERSION}"
 fi
 if [ -z "${SEARCH_PROCESSOR_PLUGIN_URL:-}" ]; then
-  SEARCH_PROCESSOR_PLUGIN_URL="https://github.com/opensearch-project/search-processor/releases/download/${OPENSEARCH_VERSION}/search-processor.zip"
+  SEARCH_PROCESSOR_PLUGIN_URL="https://github.com/opensearch-project/search-processor/releases/download/${OPENSEARCH_VERSION}/opensearch-search-processor-${OPENSEARCH_VERSION}-0.zip"
 fi
 
 function print_help() {
