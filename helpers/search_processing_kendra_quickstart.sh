@@ -7,7 +7,7 @@ set -o nounset
 
 # Some useful constants
 readonly DOCKER_IMAGE_TAG="opensearch-with-ranking-plugin"
-readonly OPENSEARCH_VERSION="2.5.0"
+readonly OPENSEARCH_VERSION="2.6.0"
 
 #
 # Set default values for OpenSearch (+Dashboards) image tags and plugin URL.
@@ -20,7 +20,7 @@ if [ -z "${OPENSEARCH_DASHBOARDS_IMAGE_TAG:-}" ]; then
   OPENSEARCH_DASHBOARDS_IMAGE_TAG="opensearchproject/opensearch-dashboards:${OPENSEARCH_VERSION}"
 fi
 if [ -z "${SEARCH_PROCESSOR_PLUGIN_URL:-}" ]; then
-  SEARCH_PROCESSOR_PLUGIN_URL="https://github.com/opensearch-project/search-processor/releases/download/${OPENSEARCH_VERSION}/search-processor.zip"
+  SEARCH_PROCESSOR_PLUGIN_URL="https://github.com/opensearch-project/search-processor/releases/download/${OPENSEARCH_VERSION}/opensearch-search-processor-${OPENSEARCH_VERSION}.0.zip"
 fi
 
 function print_help() {
