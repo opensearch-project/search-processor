@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         java: [ 11, 17 ]
-        bwc_version : [ "2.5.0" ]
+        bwc_version : [ "2.6.0" ]
         opensearch_version : [ "3.0.0-SNAPSHOT" ]
 
     name: SRP Restart-Upgrade BWC Tests
@@ -42,7 +42,7 @@ jobs:
     strategy:
       matrix:
         java: [ 11, 17 ]
-        bwc_version: [ "2.5.0" ]
+        bwc_version: [ "2.6.0" ]
         opensearch_version: [ "3.0.0-SNAPSHOT" ]
 
     name: SRP Rolling-Upgrade BWC Tests
