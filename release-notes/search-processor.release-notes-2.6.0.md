@@ -7,4 +7,7 @@
 * Update artifact name [#109](https://github.com/opensearch-project/search-processor/pull/109)
 
 ### Maintenance
-*
+* Bumping plugin version to `2.6.0` and `jackson-core` version to `2.14.2` [#110](https://github.com/opensearch-project/search-processor/pull/110)
+
+### Documentation
+* Adding `2.6.0` release notes [#110](https://github.com/opensearch-project/search-processor/pull/110)
