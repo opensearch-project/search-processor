@@ -6,10 +6,7 @@ This document contains a list of maintainers in this repo. See [opensearch-proje
 
 | Maintainer      | GitHub ID                                 | Affiliation |
 | --------------- | ----------------------------------------- | ----------- |
-| Anirudha Jadhav | [anirudha](https://github.com/anirudha)   | Amazon      |
 | Michael Froh    | [msfroh](https://github.com/msfroh)       | Amazon      |
 | Mark Cohen      | [macohen](https://github.com/macohen)     | Amazon      |
-| Lior Perry      | [YANG-DB](https://github.com/YANG-DB)     | Amazon      |
-| Shenoy Pratik   | [ps48](https://github.com/ps48)           | Amazon      |
 | Louis Chu       | [noCharger](https://github.com/noCharger) | Amazon      |
 | Mingshi Liu     | [mingshl](https://github.com/mingshl)     | Amazon      |
