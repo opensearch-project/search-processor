@@ -1,2 +1,2 @@
-# This should match the owning team set up in https://github.com/orgs/opensearch-project/teams
-*   @opensearch-project/search-request-processor-team
+# This should match the MAINTAINERS.md file in the root of this repo
+*   @msfroh @macohen @noCharger @mingshl
