@@ -13,8 +13,8 @@ import org.opensearch.action.search.SearchRequest;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.common.xcontent.XContentBuilder;
 import org.opensearch.common.xcontent.json.JsonXContent;
+import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.index.query.MatchAllQueryBuilder;
 import org.opensearch.index.query.MatchQueryBuilder;
 import org.opensearch.index.query.MultiMatchQueryBuilder;
@@ -27,7 +27,6 @@ import org.opensearch.search.relevance.transformer.kendraintelligentranking.clie
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration.KendraIntelligentRankingProperties;
-import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.KendraIntelligentRankingException;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreRequest;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreResult;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreResultItem;

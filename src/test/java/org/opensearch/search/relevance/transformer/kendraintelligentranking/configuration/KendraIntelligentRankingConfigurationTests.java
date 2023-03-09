@@ -11,8 +11,8 @@ import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentHelper;
-import org.opensearch.common.xcontent.XContentParser;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.search.relevance.configuration.Constants;
 import org.opensearch.test.OpenSearchTestCase;
 
