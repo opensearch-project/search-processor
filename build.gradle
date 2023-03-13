@@ -38,7 +38,7 @@ publishing {
     }
 }
 opensearchplugin {
-    name "opensearch-${pluginName}-${opensearch_version}.0"
+    name "opensearch-${pluginName}-${plugin_version}.0"
     description pluginDescription
     classname "${projectPath}.${pathToPlugin}.${pluginClassName}"
     licenseFile rootProject.file('LICENSE')
@@ -53,7 +53,13 @@ validateNebulaPom.enabled = false
 
 buildscript {
     ext {
-        opensearch_version = "2.6.0"
+        plugin_version = "3.0.0"
+        snapshot = true // Set to false on release
+        if (snapshot) {
+            opensearch_version = plugin_version + "-SNAPSHOT"
+        } else {
+            opensearch_version = plugin_version
+        }
     }
 
     repositories {

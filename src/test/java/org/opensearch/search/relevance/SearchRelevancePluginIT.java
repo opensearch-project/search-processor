@@ -7,7 +7,8 @@
  */
 package org.opensearch.search.relevance;
 
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.opensearch.client.Request;
 import org.opensearch.client.Response;
 import org.opensearch.test.rest.OpenSearchRestTestCase;
@@ -16,7 +17,7 @@ import java.io.IOException;
 
 public class SearchRelevancePluginIT extends OpenSearchRestTestCase {
 
-    public void testPluginInstalled() throws IOException {
+    public void testPluginInstalled() throws IOException, ParseException {
         Response response = client().performRequest(new Request("GET", "/_cat/plugins"));
         String body = EntityUtils.toString(response.getEntity());
 
