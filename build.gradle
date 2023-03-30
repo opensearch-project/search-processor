@@ -53,12 +53,11 @@ validateNebulaPom.enabled = false
 
 buildscript {
     ext {
-        plugin_version = "2.7.0"
-        snapshot = true // Set to false on release
-        if (snapshot) {
-            opensearch_version = plugin_version + "-SNAPSHOT"
-        } else {
-            opensearch_version = plugin_version
+        isSnapshot = "true" == System.getProperty("build.snapshot", "true")
+        opensearch_version = System.getProperty("opensearch.version", "2.7.0")
+        plugin_version = opensearch_version
+        if (isSnapshot) {
+            opensearch_version += "-SNAPSHOT"
         }
     }
 
