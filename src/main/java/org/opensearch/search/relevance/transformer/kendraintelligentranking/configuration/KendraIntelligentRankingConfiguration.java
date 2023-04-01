@@ -7,16 +7,17 @@
  */
 package org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration;
 
-import org.opensearch.common.ParseField;
 import org.opensearch.common.ParsingException;
 import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.common.io.stream.StreamOutput;
 import org.opensearch.common.io.stream.Writeable;
 import org.opensearch.common.settings.Settings;
-import org.opensearch.common.xcontent.ObjectParser;
-import org.opensearch.common.xcontent.ToXContentObject;
-import org.opensearch.common.xcontent.XContentBuilder;
-import org.opensearch.common.xcontent.XContentParser;
+import org.opensearch.core.ParseField;
+import org.opensearch.core.xcontent.ObjectParser;
+import org.opensearch.core.xcontent.ToXContent;
+import org.opensearch.core.xcontent.ToXContentObject;
+import org.opensearch.core.xcontent.XContentBuilder;
+import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfiguration;
 import org.opensearch.search.relevance.configuration.TransformerConfiguration;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.KendraIntelligentRanker;
@@ -76,7 +77,7 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
     this.properties.writeTo(out);
   }
 
-  public static ResultTransformerConfiguration parse(XContentParser parser) throws IOException {
+  public static KendraIntelligentRankingConfiguration parse(XContentParser parser) throws IOException {
     try {
       KendraIntelligentRankingConfiguration configuration = PARSER.parse(parser, null);
       if (configuration != null && configuration.getOrder() <= 0) {
@@ -90,7 +91,7 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
   }
 
   @Override
-  public XContentBuilder toXContent(XContentBuilder builder, Params params) throws IOException {
+  public XContentBuilder toXContent(XContentBuilder builder, ToXContent.Params params) throws IOException {
     builder.startObject();
     builder.field(TRANSFORMER_ORDER.getPreferredName(), this.order);
     builder.field(TRANSFORMER_PROPERTIES.getPreferredName(), this.properties);
@@ -154,7 +155,7 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
 
     public KendraIntelligentRankingProperties(StreamInput input) throws IOException {
       this.bodyFields = input.readStringList();
-      this.bodyFields = input.readStringList();
+      this.titleFields = input.readStringList();
       this.docLimit = input.readInt();
     }
 
@@ -195,7 +196,7 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
 
       KendraIntelligentRankingProperties properties = (KendraIntelligentRankingProperties) o;
 
-      return (bodyFields == properties.bodyFields) && (titleFields == properties.titleFields) &&
+      return Objects.equals(bodyFields, properties.bodyFields) && Objects.equals(titleFields, properties.titleFields) &&
           (docLimit == properties.docLimit);
     }
 
@@ -228,4 +229,6 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
       this.docLimit = docLimit;
     }
   }
+
+
 }
