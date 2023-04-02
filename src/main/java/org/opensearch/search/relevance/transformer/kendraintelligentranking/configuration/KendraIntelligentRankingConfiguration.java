@@ -196,8 +196,8 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
 
       KendraIntelligentRankingProperties properties = (KendraIntelligentRankingProperties) o;
 
-      return Objects.equals(bodyFields, properties.bodyFields) && Objects.equals(titleFields, properties.titleFields) &&
-          (docLimit == properties.docLimit);
+      return bodyFields.equals(properties.bodyFields) && titleFields.equals(properties.titleFields) &&
+          docLimit == properties.docLimit;
     }
 
     @Override
@@ -228,6 +228,7 @@ public class KendraIntelligentRankingConfiguration extends ResultTransformerConf
     public void setDocLimit(final int docLimit) {
       this.docLimit = docLimit;
     }
+
   }
 
 
