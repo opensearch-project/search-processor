@@ -11,8 +11,8 @@ import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.io.stream.BytesStreamOutput;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.XContentHelper;
-import org.opensearch.common.xcontent.XContentParser;
 import org.opensearch.common.xcontent.XContentType;
+import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.search.relevance.configuration.Constants;
 import org.opensearch.test.OpenSearchTestCase;
 
@@ -48,7 +48,7 @@ public class KendraIntelligentRankingConfigurationTests extends OpenSearchTestCa
     }
 
     private static KendraIntelligentRankingConfiguration getKendraIntelligentRankingConfiguration() {
-        int order = randomInt(10);
+        int order = randomInt(10) + 1;
         int docLimit = randomInt( Integer.MAX_VALUE - 25) + 25;
         KendraIntelligentRankingConfiguration.KendraIntelligentRankingProperties properties =
                 new KendraIntelligentRankingConfiguration.KendraIntelligentRankingProperties(List.of("body1"),
