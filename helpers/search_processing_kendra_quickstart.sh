@@ -7,7 +7,7 @@ set -o nounset
 
 # Some useful constants
 readonly DOCKER_IMAGE_TAG="opensearch-with-ranking-plugin"
-readonly OPENSEARCH_VERSION="2.6.0"
+readonly OPENSEARCH_VERSION="2.7.0"
 
 #
 # Set default values for OpenSearch (+Dashboards) image tags and plugin URL.
