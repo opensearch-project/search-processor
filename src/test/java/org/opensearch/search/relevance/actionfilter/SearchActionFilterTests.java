@@ -9,7 +9,6 @@ package org.opensearch.search.relevance.actionfilter;
 
 import org.apache.lucene.search.TotalHits;
 import org.mockito.Mockito;
-import org.opensearch.action.ActionFuture;
 import org.opensearch.action.ActionListener;
 import org.opensearch.action.admin.indices.settings.get.GetSettingsAction;
 import org.opensearch.action.admin.indices.settings.get.GetSettingsRequest;
@@ -56,7 +55,8 @@ import java.util.function.Consumer;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 public class SearchActionFilterTests extends OpenSearchTestCase {
 
@@ -115,7 +115,6 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
 
     private static Client buildMockClient(String indexName, Settings... settings) {
         Client client = Mockito.mock(Client.class);
-        ActionFuture<GetSettingsResponse> mockGetSettingsFuture = Mockito.mock(ActionFuture.class);
 
         Settings.Builder settingsBuilder = Settings.builder();
         for (Settings settingsEntry : settings) {
@@ -124,9 +123,11 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         Settings settingsObj = settingsBuilder.build();
         Map<String, Settings> indexSettingsMap = Map.of(indexName, settingsObj);
         GetSettingsResponse getSettingsResponse = new GetSettingsResponse(indexSettingsMap, Collections.emptyMap());
-        when(mockGetSettingsFuture.actionGet()).thenReturn(getSettingsResponse);
-        when(client.execute(eq(GetSettingsAction.INSTANCE), any(GetSettingsRequest.class)))
-                .thenReturn(mockGetSettingsFuture);
+        doAnswer(invocation -> {
+            ActionListener<GetSettingsResponse> responseListener = invocation.getArgument(2);
+            responseListener.onResponse(getSettingsResponse);
+            return null;
+        }).when(client).execute(eq(GetSettingsAction.INSTANCE), any(GetSettingsRequest.class), any(ActionListener.class));
         return client;
     }
 
@@ -145,7 +146,8 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         AtomicBoolean proceedCalled = new AtomicBoolean(false);
         ActionFilterChain<SearchRequest, SearchResponse> searchFilterChain =
                 (task1, action, request, listener) -> proceedCalled.set(true);
-        searchActionFilter.apply(task, SearchAction.NAME, searchRequest, null, searchFilterChain);
+        ActionListener<SearchResponse> mockListener = mock(ActionListener.class);
+        searchActionFilter.apply(task, SearchAction.NAME, searchRequest, mockListener, searchFilterChain);
         assertTrue(proceedCalled.get());
     }
 
@@ -263,7 +265,8 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         AtomicBoolean proceedCalled = new AtomicBoolean(false);
         ActionFilterChain<SearchRequest, SearchResponse> searchFilterChain =
                 (task1, action, request, listener) -> proceedCalled.set(true);
-        searchActionFilter.apply(task, SearchAction.NAME, searchRequest, null, searchFilterChain);
+        ActionListener<SearchResponse> mockListener = mock(ActionListener.class);
+        searchActionFilter.apply(task, SearchAction.NAME, searchRequest, mockListener, searchFilterChain);
         assertTrue(proceedCalled.get());
         // We should try to check for index-level settings
         assertTrue(mockTransformer.getTransformerSettingsWasCalled);
