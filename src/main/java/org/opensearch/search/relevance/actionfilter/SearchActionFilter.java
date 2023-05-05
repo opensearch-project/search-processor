@@ -24,6 +24,7 @@ import org.opensearch.common.io.stream.NamedWriteableAwareStreamInput;
 import org.opensearch.common.io.stream.NamedWriteableRegistry;
 import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.common.settings.Setting;
+import org.opensearch.common.settings.Settings;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
@@ -89,7 +90,7 @@ public class SearchActionFilter implements ActionFilter {
 
         // TODO: Remove originalSearchSource and replace with a deep copy of the SearchRequest object
         // once https://github.com/opensearch-project/OpenSearch/issues/869 is implemented
-        SearchSourceBuilder originalSearchSource = null;
+        SearchSourceBuilder originalSearchSource;
         if (searchRequest.source() != null) {
             originalSearchSource = searchRequest.source().shallowCopy();
             if (searchRequest.source().fetchSource() != null) {
@@ -98,6 +99,8 @@ public class SearchActionFilter implements ActionFilter {
                 originalSearchSource.fetchSource(new FetchSourceContext(fetchSourceContext.fetchSource(),
                         fetchSourceContext.includes(), fetchSourceContext.excludes()));
             }
+        } else {
+            originalSearchSource = null;
         }
 
         final String[] indices = searchRequest.indices();
@@ -107,27 +110,29 @@ public class SearchActionFilter implements ActionFilter {
             return;
         }
 
-        List<ResultTransformerConfiguration> resultTransformerConfigurations =
-                getResultTransformerConfigurations(indices[0], searchRequest);
 
-        LinkedHashMap<ResultTransformer, ResultTransformerConfiguration> orderedTransformersAndConfigs = new LinkedHashMap<>();
-        for (ResultTransformerConfiguration config : resultTransformerConfigurations) {
-            ResultTransformer resultTransformer = resultTransformerMap.get(config.getTransformerName());
-            // TODO: Should transformers make a decision based on the original request or the request they receive in the chain
-            if (resultTransformer.shouldTransform(searchRequest, config)) {
-                searchRequest = resultTransformer.preprocessRequest(searchRequest, config);
-                orderedTransformersAndConfigs.put(resultTransformer, config);
+        ActionListener<List<ResultTransformerConfiguration>> resultTransformerConfigsListener = ActionListener.wrap(rtc -> {
+            LinkedHashMap<ResultTransformer, ResultTransformerConfiguration> orderedTransformersAndConfigs = new LinkedHashMap<>();
+            SearchRequest transformedRequest = searchRequest;
+            for (ResultTransformerConfiguration config : rtc) {
+                ResultTransformer resultTransformer = resultTransformerMap.get(config.getTransformerName());
+                // TODO: Should transformers make a decision based on the original request or the request they receive in the chain
+                if (resultTransformer.shouldTransform(searchRequest, config)) {
+                    transformedRequest = resultTransformer.preprocessRequest(transformedRequest, config);
+                    orderedTransformersAndConfigs.put(resultTransformer, config);
+                }
             }
-        }
 
-        if (!orderedTransformersAndConfigs.isEmpty()) {
-            final ActionListener<Response> searchResponseListener = createSearchResponseListener(
-                    listener, startTime, orderedTransformersAndConfigs, searchRequest, originalSearchSource);
-            chain.proceed(task, action, request, searchResponseListener);
-            return;
-        }
+            if (!orderedTransformersAndConfigs.isEmpty()) {
+                final ActionListener<Response> searchResponseListener = createSearchResponseListener(
+                        listener, startTime, orderedTransformersAndConfigs, transformedRequest, originalSearchSource);
+                chain.proceed(task, action, request, searchResponseListener);
+                return;
+            }
+            chain.proceed(task, action, request, listener);
+        }, listener::onFailure);
 
-        chain.proceed(task, action, request, listener);
+        getResultTransformerConfigurations(indices[0], searchRequest, resultTransformerConfigsListener);
     }
 
     /**
@@ -139,16 +144,18 @@ public class SearchActionFilter implements ActionFilter {
      * @return ordered and validated list of result transformers, empty list if not specified at
      * either request or index level
      */
-    private List<ResultTransformerConfiguration> getResultTransformerConfigurations(
+    private void getResultTransformerConfigurations(
             final String indexName,
-            final SearchRequest searchRequest) {
+            final SearchRequest searchRequest,
+            ActionListener<List<ResultTransformerConfiguration>> resultTransformerConfigListener) {
 
         List<ResultTransformerConfiguration> configs = new ArrayList<>();
 
         // Request level configuration takes precedence over index level
         configs = ConfigurationUtils.getResultTransformersFromRequestConfiguration(searchRequest);
         if (!configs.isEmpty()) {
-            return configs;
+            resultTransformerConfigListener.onResponse(configs);
+            return;
         }
 
         // Fetch all index settings for this plugin
@@ -159,10 +166,10 @@ public class SearchActionFilter implements ActionFilter {
                         .map(Setting::getKey))
                 .toArray(String[]::new);
 
-        configs = ConfigurationUtils.getResultTransformersFromIndexConfiguration(
-                openSearchClient.getIndexSettings(indexName, settingNames), resultTransformerMap);
 
-        return configs;
+        ActionListener<Settings> settingsListener = ActionListener.map(resultTransformerConfigListener,
+                s -> ConfigurationUtils.getResultTransformersFromIndexConfiguration(s, resultTransformerMap));
+        openSearchClient.getIndexSettings(indexName, settingNames, settingsListener);
     }
 
     /**

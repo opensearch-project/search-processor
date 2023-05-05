@@ -7,6 +7,7 @@
  */
 package org.opensearch.search.relevance.configuration;
 
+import org.opensearch.action.ActionListener;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.search.SearchExtBuilder;
@@ -33,65 +34,67 @@ public class ConfigurationUtils {
                                                                                                    Map<String, ResultTransformer> resultTransformerMap) {
       List<ResultTransformerConfiguration> indexLevelConfigs = new ArrayList<>();
 
-      if (settings != null) {
-        if (settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX) != null) {
-          for (Map.Entry<String, Settings> transformerSettings : settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX).entrySet()) {
-            if (resultTransformerMap.containsKey(transformerSettings.getKey())) {
-              ResultTransformer transformer = resultTransformerMap.get(transformerSettings.getKey());
-              indexLevelConfigs.add(transformer.getConfigurationFactory().configure(transformerSettings.getValue()));
-            }
+    if (settings != null) {
+      if (settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX) != null) {
+        for (Map.Entry<String, Settings> transformerSettings : settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX).entrySet()) {
+          if (resultTransformerMap.containsKey(transformerSettings.getKey())) {
+            ResultTransformer transformer = resultTransformerMap.get(transformerSettings.getKey());
+            indexLevelConfigs.add(transformer.getConfigurationFactory().configure(transformerSettings.getValue()));
           }
         }
       }
-
-      return reorderAndValidateConfigs(indexLevelConfigs);
-     }
-
-  /**
-   * Get result transformer configurations from Search Request
-   * @param searchRequest input request
-   * @return ordered and validated list of result transformers, empty list if not specified
-   */
-  public static List<ResultTransformerConfiguration> getResultTransformersFromRequestConfiguration(
-      final SearchRequest searchRequest) {
-
-    // Fetch result transformers specified in request
-    SearchConfigurationExtBuilder requestLevelSearchConfiguration = null;
-    if (searchRequest.source() != null && searchRequest.source().ext() != null && !searchRequest.source().ext().isEmpty()) {
-      // Filter ext builders by name
-      List<SearchExtBuilder> extBuilders = searchRequest.source().ext().stream()
-          .filter(searchExtBuilder -> SearchConfigurationExtBuilder.NAME.equals(searchExtBuilder.getWriteableName()))
-          .collect(Collectors.toList());
-      if (!extBuilders.isEmpty()) {
-        requestLevelSearchConfiguration = (SearchConfigurationExtBuilder) extBuilders.get(0);
-      }
     }
 
-    List<ResultTransformerConfiguration> requestLevelConfigs = new ArrayList<>();
-    if (requestLevelSearchConfiguration != null) {
-      requestLevelConfigs = reorderAndValidateConfigs(requestLevelSearchConfiguration.getResultTransformers());
-    }
-    return requestLevelConfigs;
+    return reorderAndValidateConfigs(indexLevelConfigs);
   }
 
-  /**
-   * Sort configurations in ascending order of invocation, and validate
-   * @param configs list of result transformer configurations
-   * @return ordered and validated list of result transformers
-   */
-  public static List<ResultTransformerConfiguration> reorderAndValidateConfigs(
-      final List<ResultTransformerConfiguration> configs) throws IllegalArgumentException {
+    /**
+     * Get result transformer configurations from Search Request
+     *
+     * @param searchRequest input request
+     * @return ordered and validated list of result transformers, empty list if not specified
+     */
+    public static List<ResultTransformerConfiguration> getResultTransformersFromRequestConfiguration(
+            final SearchRequest searchRequest) {
 
-    // Sort
-    configs.sort(Comparator.comparingInt(ResultTransformerConfiguration::getOrder));
+        // Fetch result transformers specified in request
+        SearchConfigurationExtBuilder requestLevelSearchConfiguration = null;
+        if (searchRequest.source() != null && searchRequest.source().ext() != null && !searchRequest.source().ext().isEmpty()) {
+            // Filter ext builders by name
+            List<SearchExtBuilder> extBuilders = searchRequest.source().ext().stream()
+                    .filter(searchExtBuilder -> SearchConfigurationExtBuilder.NAME.equals(searchExtBuilder.getWriteableName()))
+                    .collect(Collectors.toList());
+            if (!extBuilders.isEmpty()) {
+                requestLevelSearchConfiguration = (SearchConfigurationExtBuilder) extBuilders.get(0);
+            }
+        }
 
-    for (int i = 0; i < configs.size(); ++i) {
-      if (configs.get(i).getOrder() != (i + 1)) {
-        throw new IllegalArgumentException("Expected order [" + (i + 1) + "] for transformer [" +
-            configs.get(i).getTransformerName() + "], but found [" + configs.get(i).getOrder() + "]");
-      }
+        List<ResultTransformerConfiguration> requestLevelConfigs = new ArrayList<>();
+        if (requestLevelSearchConfiguration != null) {
+            requestLevelConfigs = reorderAndValidateConfigs(requestLevelSearchConfiguration.getResultTransformers());
+        }
+        return requestLevelConfigs;
     }
 
-    return configs;
-  }
+    /**
+     * Sort configurations in ascending order of invocation, and validate
+     *
+     * @param configs list of result transformer configurations
+     * @return ordered and validated list of result transformers
+     */
+    public static List<ResultTransformerConfiguration> reorderAndValidateConfigs(
+            final List<ResultTransformerConfiguration> configs) throws IllegalArgumentException {
+
+        // Sort
+        configs.sort(Comparator.comparingInt(ResultTransformerConfiguration::getOrder));
+
+        for (int i = 0; i < configs.size(); ++i) {
+            if (configs.get(i).getOrder() != (i + 1)) {
+                throw new IllegalArgumentException("Expected order [" + (i + 1) + "] for transformer [" +
+                        configs.get(i).getTransformerName() + "], but found [" + configs.get(i).getOrder() + "]");
+            }
+        }
+
+        return configs;
+    }
 }
