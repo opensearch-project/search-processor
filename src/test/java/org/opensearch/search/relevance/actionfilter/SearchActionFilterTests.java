@@ -57,7 +57,8 @@ import java.util.function.Consumer;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 public class SearchActionFilterTests extends OpenSearchTestCase {
 
@@ -128,9 +129,11 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
                 .build();
         ImmutableOpenMap<String, Settings> emptyMap = ImmutableOpenMap.<String, Settings>builder().build();
         GetSettingsResponse getSettingsResponse = new GetSettingsResponse(indexSettingsMap, emptyMap);
-        when(mockGetSettingsFuture.actionGet()).thenReturn(getSettingsResponse);
-        when(client.execute(eq(GetSettingsAction.INSTANCE), any(GetSettingsRequest.class)))
-                .thenReturn(mockGetSettingsFuture);
+        doAnswer(invocation -> {
+            ActionListener<GetSettingsResponse> responseListener = invocation.getArgument(2);
+            responseListener.onResponse(getSettingsResponse);
+            return null;
+        }).when(client).execute(eq(GetSettingsAction.INSTANCE), any(GetSettingsRequest.class), any(ActionListener.class));
         return client;
     }
 
@@ -149,7 +152,8 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         AtomicBoolean proceedCalled = new AtomicBoolean(false);
         ActionFilterChain<SearchRequest, SearchResponse> searchFilterChain =
                 (task1, action, request, listener) -> proceedCalled.set(true);
-        searchActionFilter.apply(task, SearchAction.NAME, searchRequest, null, searchFilterChain);
+        ActionListener<SearchResponse> mockListener = mock(ActionListener.class);
+        searchActionFilter.apply(task, SearchAction.NAME, searchRequest, mockListener, searchFilterChain);
         assertTrue(proceedCalled.get());
     }
 
@@ -267,7 +271,8 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         AtomicBoolean proceedCalled = new AtomicBoolean(false);
         ActionFilterChain<SearchRequest, SearchResponse> searchFilterChain =
                 (task1, action, request, listener) -> proceedCalled.set(true);
-        searchActionFilter.apply(task, SearchAction.NAME, searchRequest, null, searchFilterChain);
+        ActionListener<SearchResponse> mockListener = mock(ActionListener.class);
+        searchActionFilter.apply(task, SearchAction.NAME, searchRequest, mockListener, searchFilterChain);
         assertTrue(proceedCalled.get());
         // We should try to check for index-level settings
         assertTrue(mockTransformer.getTransformerSettingsWasCalled);
