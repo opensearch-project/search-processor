@@ -27,9 +27,11 @@ import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
 import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.Plugin;
+import org.opensearch.plugins.SearchPipelinePlugin;
 import org.opensearch.plugins.SearchPlugin;
 import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.script.ScriptService;
+import org.opensearch.search.pipeline.Processor;
 import org.opensearch.search.relevance.actionfilter.SearchActionFilter;
 import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfigurationFactory;
@@ -40,10 +42,12 @@ import org.opensearch.search.relevance.transformer.kendraintelligentranking.Kend
 import org.opensearch.search.relevance.transformer.ResultTransformer;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfigurationFactory;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.PersonalizeRankingResponseProcessor;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.client.PersonalizeClientSettings;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.watcher.ResourceWatcherService;
 
-public class SearchRelevancePlugin extends Plugin implements ActionPlugin, SearchPlugin {
+public class SearchRelevancePlugin extends Plugin implements ActionPlugin, SearchPlugin, SearchPipelinePlugin {
 
   private OpenSearchClient openSearchClient;
   private KendraHttpClient kendraClient;
@@ -106,5 +110,11 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
                 input -> new SearchConfigurationExtBuilder(input, resultTransformerMap),
                 parser -> SearchConfigurationExtBuilder.parse(parser, resultTransformerMap)));
   }
-  
+
+  @Override
+  public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
+    return Map.of(PersonalizeRankingResponseProcessor.TYPE,
+            new PersonalizeRankingResponseProcessor.Factory(
+                    PersonalizeClientSettings.getClientSettings(parameters.env.settings())));
+  }
 }
