@@ -1,31 +1,35 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * The OpenSearch Contributors require contributions made to
+ * this file be licensed under the Apache-2.0 license or a
+ * compatible open source license.
+ */
 package org.opensearch.search.relevance.transformer.kendraintelligentranking.pipeline;
 
 import org.apache.lucene.search.TotalHits;
 import org.opensearch.OpenSearchParseException;
-import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.SearchRequest;
+import org.opensearch.action.search.SearchResponse;
 import org.opensearch.action.search.SearchResponseSections;
+import org.opensearch.common.bytes.BytesArray;
 import org.opensearch.common.document.DocumentField;
-import org.opensearch.index.query.MatchQueryBuilder;
-import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.env.Environment;
 import org.opensearch.env.TestEnvironment;
+import org.opensearch.index.query.MatchQueryBuilder;
+import org.opensearch.index.query.QueryBuilder;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraClientSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraHttpClient;
-import org.opensearch.test.OpenSearchTestCase;
-import org.opensearch.common.bytes.BytesArray;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraIntelligentClientTests;
+
+import java.util.*;
 
 
-public class KendraRankingResponseProcessorTests extends OpenSearchTestCase {
+public class KendraRankingResponseProcessorTests extends KendraIntelligentClientTests {
     private static final String TYPE = "kendra_ranking";
     private Settings settings = buildEnvSettings(Settings.EMPTY);
     private Environment env = TestEnvironment.newEnvironment(settings);
@@ -65,7 +69,7 @@ public class KendraRankingResponseProcessorTests extends OpenSearchTestCase {
                 Collections.emptyMap()
         ));
 
-        //test create with required field
+        //test create with all fields
         List<String> titleField= new ArrayList<>();
         titleField.add("field");
         Map<String,Object> configuration = new HashMap<>();
@@ -76,6 +80,8 @@ public class KendraRankingResponseProcessorTests extends OpenSearchTestCase {
         assertEquals(TYPE, processorWithAllFields.getType());
         assertEquals("tmp0", processorWithAllFields.getTag());
         assertEquals("testingAllFields", processorWithAllFields.getDescription());
+
+        //test create with required field
         Map<String,Object> shortConfiguration = new HashMap<>();
         shortConfiguration.put("body_field","body");
         KendraRankingResponseProcessor processorWithOneFields = factory.create(Collections.emptyMap(),"tmp1","testingBodyField", shortConfiguration);
@@ -83,10 +89,27 @@ public class KendraRankingResponseProcessorTests extends OpenSearchTestCase {
         assertEquals("tmp1", processorWithOneFields.getTag());
         assertEquals("testingBodyField", processorWithOneFields.getDescription());
 
+        //test create with null doc_limit field
+        Map<String,Object> nullDocLimitConfiguration = new HashMap<>();
+        nullDocLimitConfiguration.put("body_field","body");
+        nullDocLimitConfiguration.put("doc_limit",null);
+        KendraRankingResponseProcessor processorWithNullDocLimit = factory.create(Collections.emptyMap(),"tmp2","testingNullDocLimit", nullDocLimitConfiguration);
+        assertEquals(TYPE, processorWithNullDocLimit.getType());
+        assertEquals("tmp2", processorWithNullDocLimit.getTag());
+        assertEquals("testingNullDocLimit", processorWithNullDocLimit.getDescription());
+
+        //test create with null title field
+        Map<String,Object> nullTitleConfiguration = new HashMap<>();
+        nullTitleConfiguration.put("body_field","body");
+        nullTitleConfiguration.put("title_field",null);
+        KendraRankingResponseProcessor processorWithNullTitleField = factory.create(Collections.emptyMap(),"tmp3","testingNullTitleField", nullTitleConfiguration);
+        assertEquals(TYPE, processorWithNullTitleField.getType());
+        assertEquals("tmp3", processorWithNullTitleField.getTag());
+        assertEquals("testingNullTitleField", processorWithNullTitleField.getDescription());
 
     }
     public void testRankingResponse() throws Exception {
-        KendraHttpClient kendraClient = new KendraHttpClient(KendraClientSettings.getClientSettings(env.settings()));
+        KendraHttpClient kendraClient = buildMockHttpClient();
         List<String> titleField = new ArrayList<>();
         titleField.add("field");
         List<String> bodyField = new ArrayList<>();

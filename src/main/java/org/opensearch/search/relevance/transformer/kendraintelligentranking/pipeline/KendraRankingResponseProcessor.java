@@ -52,12 +52,12 @@ public class KendraRankingResponseProcessor implements SearchResponseProcessor {
     /**
      * Constructor that apply configuration for kendra re-ranking
      *
-     * @param tag          processor tag
-     * @param description  processor description
-     * @param titleField   titleField applied to kendra re-ranking
-     * @param bodyField    bodyField applied to kendra re-ranking
-     * @param inputDocLimit     docLimit applied to kendra re-ranking
-     * @param kendraClient kendraClient to connect with kendra
+     * @param tag            processor tag
+     * @param description    processor description
+     * @param titleField     titleField applied to kendra re-ranking
+     * @param bodyField      bodyField applied to kendra re-ranking
+     * @param inputDocLimit  docLimit applied to kendra re-ranking
+     * @param kendraClient   kendraClient to connect with kendra
      */
     public KendraRankingResponseProcessor(String tag, String description, List<String> titleField, List<String> bodyField, Integer inputDocLimit, KendraHttpClient kendraClient) {
         super();
