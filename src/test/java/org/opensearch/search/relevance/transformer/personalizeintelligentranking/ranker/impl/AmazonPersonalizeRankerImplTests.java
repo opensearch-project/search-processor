@@ -12,6 +12,7 @@ import org.mockito.Mockito;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.client.PersonalizeClient;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.PersonalizeIntelligentRankerConfiguration;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParameters;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker.impl.AmazonPersonalizedRankerImpl;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.utils.PersonalizeRuntimeTestUtil;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.utils.SearchTestUtil;
@@ -37,8 +38,10 @@ public class AmazonPersonalizeRankerImplTests extends OpenSearchTestCase {
         Mockito.when(client.getPersonalizedRanking(any())).thenReturn(PersonalizeRuntimeTestUtil.buildGetPersonalizedRankingResult());
 
         AmazonPersonalizedRankerImpl ranker = new AmazonPersonalizedRankerImpl(rankerConfig, client);
+        PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters();
+        requestParameters.setUserId("28");
         SearchHits responseHits = SearchTestUtil.getSampleSearchHitsForPersonalize(10);
-        SearchHits transformedHits = ranker.rerank(responseHits);
+        SearchHits transformedHits = ranker.rerank(responseHits, requestParameters);
         assertEquals(responseHits.getHits().length, transformedHits.getHits().length);
     }
 
@@ -50,8 +53,10 @@ public class AmazonPersonalizeRankerImplTests extends OpenSearchTestCase {
         Mockito.when(client.getPersonalizedRanking(any())).thenReturn(PersonalizeRuntimeTestUtil.buildGetPersonalizedRankingResult());
 
         AmazonPersonalizedRankerImpl ranker = new AmazonPersonalizedRankerImpl(rankerConfig, client);
+        PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters();
+        requestParameters.setUserId("28");
         SearchHits responseHits = SearchTestUtil.getSampleSearchHitsForPersonalize(10);
-        SearchHits transformedHits = ranker.rerank(responseHits);
+        SearchHits transformedHits = ranker.rerank(responseHits, requestParameters);
         assertEquals(responseHits.getHits().length, transformedHits.getHits().length);
     }
 }

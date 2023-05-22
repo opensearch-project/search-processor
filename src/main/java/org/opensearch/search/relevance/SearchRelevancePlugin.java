@@ -10,7 +10,6 @@ package org.opensearch.search.relevance;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -44,6 +43,7 @@ import org.opensearch.search.relevance.transformer.kendraintelligentranking.conf
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfigurationFactory;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.PersonalizeRankingResponseProcessor;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.client.PersonalizeClientSettings;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParametersExtBuilder;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.watcher.ResourceWatcherService;
 
@@ -105,10 +105,12 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
   public List<SearchExtSpec<?>> getSearchExts() {
     Map<String, ResultTransformerConfigurationFactory> resultTransformerMap = getResultTransformerConfigurationFactories().stream()
             .collect(Collectors.toMap(ResultTransformerConfigurationFactory::getName, i -> i));
-    return Collections.singletonList(
-        new SearchExtSpec<>(SearchConfigurationExtBuilder.NAME,
-                input -> new SearchConfigurationExtBuilder(input, resultTransformerMap),
-                parser -> SearchConfigurationExtBuilder.parse(parser, resultTransformerMap)));
+    return List.of(new SearchExtSpec<>(SearchConfigurationExtBuilder.NAME,
+            input -> new SearchConfigurationExtBuilder(input, resultTransformerMap),
+            parser -> SearchConfigurationExtBuilder.parse(parser, resultTransformerMap)),
+            new SearchExtSpec<>(PersonalizeRequestParametersExtBuilder.NAME,
+                    input -> new PersonalizeRequestParametersExtBuilder(input),
+                    parser -> PersonalizeRequestParametersExtBuilder.parse(parser)));
   }
 
   @Override

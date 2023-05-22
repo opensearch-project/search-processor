@@ -24,6 +24,8 @@ import org.opensearch.search.relevance.transformer.personalizeintelligentranking
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.client.PersonalizeClientSettings;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.client.PersonalizeCredentialsProviderFactory;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.PersonalizeIntelligentRankerConfiguration;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParameterUtil;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParameters;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker.PersonalizedRanker;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker.PersonalizedRankerFactory;
 
@@ -86,10 +88,12 @@ public class PersonalizeRankingResponseProcessor implements SearchResponseProces
             return response;
         }
         logger.info("Personalizing search results.");
+        PersonalizeRequestParameters personalizeRequestParameters =
+                PersonalizeRequestParameterUtil.getPersonalizeRequestParameters(request);
         PersonalizedRankerFactory rankerFactory = new PersonalizedRankerFactory();
         PersonalizedRanker ranker = rankerFactory.getPersonalizedRanker(rankerConfig, personalizeClient);
         long startTime = System.nanoTime();
-        SearchHits personalizedHits = ranker.rerank(hits);
+        SearchHits personalizedHits = ranker.rerank(hits, personalizeRequestParameters);
         long personalizeTimeTookMs = TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
 
         final SearchResponseSections transformedSearchResponseSections = new InternalSearchResponse(personalizedHits,
@@ -143,11 +147,11 @@ public class PersonalizeRankingResponseProcessor implements SearchResponseProces
         public PersonalizeRankingResponseProcessor create(Map<String, Processor.Factory> processorFactories, String tag, String description, Map<String, Object> config) throws Exception {
             // TODO: Handle validation as well as required vs non required config differentiation with related user error / exception
             String personalizeCampaign = ConfigurationUtils.readStringProperty(TYPE, tag, config, CAMPAIGN_ARN_CONFIG_NAME);
-            String iamRoleArn = ConfigurationUtils.readStringProperty(TYPE, tag, config, IAM_ROLE_ARN_CONFIG_NAME);
+            String iamRoleArn = ConfigurationUtils.readOptionalStringProperty(TYPE, tag, config, IAM_ROLE_ARN_CONFIG_NAME);
             String recipe = ConfigurationUtils.readStringProperty(TYPE, tag, config, RECIPE_CONFIG_NAME);
-            String itemIdField = ConfigurationUtils.readStringProperty(TYPE, tag, config, ITEM_ID_FIELD_CONFIG_NAME);
+            String itemIdField = ConfigurationUtils.readOptionalStringProperty(TYPE, tag, config, ITEM_ID_FIELD_CONFIG_NAME);
             String awsRegion = ConfigurationUtils.readStringProperty(TYPE, tag, config, REGION_CONFIG_NAME);
-            double weight = Double.parseDouble(ConfigurationUtils.readStringProperty(TYPE, tag, config, WEIGHT_CONFIG_NAME));
+            double weight = ConfigurationUtils.readDoubleProperty(TYPE, tag, config, WEIGHT_CONFIG_NAME);
 
             PersonalizeIntelligentRankerConfiguration rankerConfig =
                     new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdField, awsRegion, weight);

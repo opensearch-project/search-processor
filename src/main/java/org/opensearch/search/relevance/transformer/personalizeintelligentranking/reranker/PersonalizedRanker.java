@@ -8,14 +8,23 @@
 package org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker;
 
 import org.opensearch.search.SearchHits;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParameters;
 
 public interface PersonalizedRanker {
 
     /**
      * Re rank search hits
-     * @param hits Search hits to re rank
+     * @param hits              Search hits to re rank
+     * @param requestParameters Request parameters for Personalize present in search request
      * @return Re ranked search hits
      */
-    public SearchHits rerank(SearchHits hits);
+    SearchHits rerank(SearchHits hits, PersonalizeRequestParameters requestParameters);
+
+    /**
+     * Validate Personalize configuration for calling Personalize service
+     * @param requestParameters Request parameters for Personalize present in search request
+     * @return True if valid configuration present else false.
+     */
+    boolean isValidPersonalizeConfigPresent(PersonalizeRequestParameters requestParameters);
 
 }
