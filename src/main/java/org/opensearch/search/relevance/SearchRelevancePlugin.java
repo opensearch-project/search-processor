@@ -31,6 +31,7 @@ import org.opensearch.plugins.SearchPlugin;
 import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.script.ScriptService;
 import org.opensearch.search.pipeline.Processor;
+import org.opensearch.search.pipeline.SearchResponseProcessor;
 import org.opensearch.search.relevance.actionfilter.SearchActionFilter;
 import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfigurationFactory;
@@ -114,7 +115,7 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
   }
 
   @Override
-  public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
+  public Map<String, Processor.Factory<SearchResponseProcessor>> getResponseProcessors(Processor.Parameters parameters) {
     return Map.of(PersonalizeRankingResponseProcessor.TYPE,
             new PersonalizeRankingResponseProcessor.Factory(
                     PersonalizeClientSettings.getClientSettings(parameters.env.settings())));

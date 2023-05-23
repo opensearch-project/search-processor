@@ -135,7 +135,7 @@ public class PersonalizeRankingResponseProcessor implements SearchResponseProces
         return description;
     }
 
-    public static final class Factory implements Processor.Factory {
+    public static final class Factory implements Processor.Factory<SearchResponseProcessor> {
 
         PersonalizeClientSettings personalizeClientSettings;
 
@@ -144,7 +144,7 @@ public class PersonalizeRankingResponseProcessor implements SearchResponseProces
         }
 
         @Override
-        public PersonalizeRankingResponseProcessor create(Map<String, Processor.Factory> processorFactories, String tag, String description, Map<String, Object> config) throws Exception {
+        public PersonalizeRankingResponseProcessor create(Map<String, Processor.Factory<SearchResponseProcessor>> processorFactories, String tag, String description, Map<String, Object> config) throws Exception {
             // TODO: Handle validation as well as required vs non required config differentiation with related user error / exception
             String personalizeCampaign = ConfigurationUtils.readStringProperty(TYPE, tag, config, CAMPAIGN_ARN_CONFIG_NAME);
             String iamRoleArn = ConfigurationUtils.readOptionalStringProperty(TYPE, tag, config, IAM_ROLE_ARN_CONFIG_NAME);
