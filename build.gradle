@@ -94,6 +94,14 @@ dependencies {
     implementation 'com.amazonaws:aws-java-sdk-personalizeruntime:1.12.300'
 }
 
+
+allprojects {
+  plugins.withId('jacoco') {
+    jacoco.toolVersion = '0.8.9'
+  }
+}
+
+
 test {
     include '**/*Tests.class'
     finalizedBy jacocoTestReport

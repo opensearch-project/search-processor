@@ -23,10 +23,12 @@ import java.security.PrivilegedAction;
 /**
  * Factory implementation for getting Personalize credentials
  */
-public class PersonalizeCredentialsProviderFactory {
-
+public final class PersonalizeCredentialsProviderFactory {
     private static final Logger logger = LogManager.getLogger(PersonalizeCredentialsProviderFactory.class);
     private static final String ASSUME_ROLE_SESSION_NAME = "OpenSearchPersonalizeIntelligentRankingPluginSession";
+
+    private PersonalizeCredentialsProviderFactory() {
+    }
 
     /**
      * Get AWS credentials provider either from static credentials from open search keystore or
@@ -34,7 +36,7 @@ public class PersonalizeCredentialsProviderFactory {
      * @param clientSettings Personalize client settings
      * @return AWS credentials provider for accessing Personalize
      */
-    public AWSCredentialsProvider getCredentialsProvider(PersonalizeClientSettings clientSettings) {
+    static AWSCredentialsProvider getCredentialsProvider(PersonalizeClientSettings clientSettings) {
         final AWSCredentialsProvider credentialsProvider;
         final AWSCredentials credentials = clientSettings.getCredentials();
         if (credentials == null) {
@@ -57,7 +59,7 @@ public class PersonalizeCredentialsProviderFactory {
      * @param awsRegion             AWS region
      * @return AWS credentials provider for accessing Amazon Personalize
      */
-    public AWSCredentialsProvider getCredentialsProvider(PersonalizeClientSettings clientSettings,
+    public static AWSCredentialsProvider getCredentialsProvider(PersonalizeClientSettings clientSettings,
                                                          String personalizeIAMRole,
                                                          String awsRegion) {
 

@@ -31,6 +31,7 @@ import org.opensearch.search.relevance.transformer.personalizeintelligentranking
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
 
 import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.CAMPAIGN_ARN_CONFIG_NAME;
 import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.IAM_ROLE_ARN_CONFIG_NAME;
@@ -138,9 +139,15 @@ public class PersonalizeRankingResponseProcessor implements SearchResponseProces
     public static final class Factory implements Processor.Factory<SearchResponseProcessor> {
 
         PersonalizeClientSettings personalizeClientSettings;
+        private final BiFunction<AWSCredentialsProvider, String, PersonalizeClient> clientBuilder;
+
+        Factory(PersonalizeClientSettings settings, BiFunction<AWSCredentialsProvider, String, PersonalizeClient> clientBuilder) {
+            this.personalizeClientSettings = settings;
+            this.clientBuilder = clientBuilder;
+        }
 
         public Factory(PersonalizeClientSettings settings) {
-            this.personalizeClientSettings = settings;
+            this(settings, PersonalizeClient::new);
         }
 
         @Override
@@ -155,9 +162,8 @@ public class PersonalizeRankingResponseProcessor implements SearchResponseProces
 
             PersonalizeIntelligentRankerConfiguration rankerConfig =
                     new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdField, awsRegion, weight);
-            PersonalizeCredentialsProviderFactory credentialsProviderFactory = new PersonalizeCredentialsProviderFactory();
-            AWSCredentialsProvider credentialsProvider = credentialsProviderFactory.getCredentialsProvider(personalizeClientSettings, iamRoleArn, awsRegion);
-            PersonalizeClient personalizeClient = new PersonalizeClient(credentialsProvider, awsRegion);
+            AWSCredentialsProvider credentialsProvider = PersonalizeCredentialsProviderFactory.getCredentialsProvider(personalizeClientSettings, iamRoleArn, awsRegion);
+            PersonalizeClient personalizeClient = clientBuilder.apply(credentialsProvider, awsRegion);
             return new PersonalizeRankingResponseProcessor(tag, description, rankerConfig, personalizeClient);
         }
     }

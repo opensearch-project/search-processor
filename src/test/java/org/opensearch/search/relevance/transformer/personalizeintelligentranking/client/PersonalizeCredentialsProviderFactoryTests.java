@@ -23,8 +23,7 @@ public class PersonalizeCredentialsProviderFactoryTests extends OpenSearchTestCa
         PersonalizeClientSettings settings =
                 PersonalizeClientSettingsTestUtil.buildClientSettings(true, true, true);
 
-        PersonalizeCredentialsProviderFactory factory = new PersonalizeCredentialsProviderFactory();
-        AWSCredentialsProvider credentialsProvider = factory.getCredentialsProvider(settings);
+        AWSCredentialsProvider credentialsProvider = PersonalizeCredentialsProviderFactory.getCredentialsProvider(settings);
         assertEquals(credentialsProvider.getClass(), AWSStaticCredentialsProvider.class);
     }
 
@@ -32,8 +31,7 @@ public class PersonalizeCredentialsProviderFactoryTests extends OpenSearchTestCa
         PersonalizeClientSettings settings =
                 PersonalizeClientSettingsTestUtil.buildClientSettings(false, false, false);
 
-        PersonalizeCredentialsProviderFactory factory = new PersonalizeCredentialsProviderFactory();
-        AWSCredentialsProvider credentialsProvider = factory.getCredentialsProvider(settings);
+        AWSCredentialsProvider credentialsProvider = PersonalizeCredentialsProviderFactory.getCredentialsProvider(settings);
         assertEquals(credentialsProvider.getClass(), DefaultAWSCredentialsProviderChain.class);
     }
 
@@ -43,8 +41,7 @@ public class PersonalizeCredentialsProviderFactoryTests extends OpenSearchTestCa
 
         String iamRoleArn = "test-iam-role-arn";
         String awsRegion = "us-west-2";
-        PersonalizeCredentialsProviderFactory factory = new PersonalizeCredentialsProviderFactory();
-        AWSCredentialsProvider credentialsProvider = factory.getCredentialsProvider(settings, iamRoleArn, awsRegion);
+        AWSCredentialsProvider credentialsProvider = PersonalizeCredentialsProviderFactory.getCredentialsProvider(settings, iamRoleArn, awsRegion);
         assertEquals(credentialsProvider.getClass(), STSAssumeRoleSessionCredentialsProvider.class);
         IdleConnectionReaper.shutdown();
     }
@@ -55,8 +52,7 @@ public class PersonalizeCredentialsProviderFactoryTests extends OpenSearchTestCa
 
         String iamRoleArn = "";
         String awsRegion = "us-west-2";
-        PersonalizeCredentialsProviderFactory factory = new PersonalizeCredentialsProviderFactory();
-        AWSCredentialsProvider credentialsProvider = factory.getCredentialsProvider(settings, iamRoleArn, awsRegion);
+        AWSCredentialsProvider credentialsProvider = PersonalizeCredentialsProviderFactory.getCredentialsProvider(settings, iamRoleArn, awsRegion);
         assertEquals(credentialsProvider.getClass(), AWSStaticCredentialsProvider.class);
     }
 
@@ -66,8 +62,7 @@ public class PersonalizeCredentialsProviderFactoryTests extends OpenSearchTestCa
 
         String iamRoleArn = "";
         String awsRegion = "us-west-2";
-        PersonalizeCredentialsProviderFactory factory = new PersonalizeCredentialsProviderFactory();
-        AWSCredentialsProvider credentialsProvider = factory.getCredentialsProvider(settings, iamRoleArn, awsRegion);
+        AWSCredentialsProvider credentialsProvider = PersonalizeCredentialsProviderFactory.getCredentialsProvider(settings, iamRoleArn, awsRegion);
         assertEquals(credentialsProvider.getClass(), DefaultAWSCredentialsProviderChain.class);
     }
 }
