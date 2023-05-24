@@ -10,7 +10,6 @@ package org.opensearch.search.relevance;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -27,9 +26,12 @@ import org.opensearch.env.Environment;
 import org.opensearch.env.NodeEnvironment;
 import org.opensearch.plugins.ActionPlugin;
 import org.opensearch.plugins.Plugin;
+import org.opensearch.plugins.SearchPipelinePlugin;
 import org.opensearch.plugins.SearchPlugin;
 import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.script.ScriptService;
+import org.opensearch.search.pipeline.Processor;
+import org.opensearch.search.pipeline.SearchResponseProcessor;
 import org.opensearch.search.relevance.actionfilter.SearchActionFilter;
 import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfigurationFactory;
@@ -40,10 +42,13 @@ import org.opensearch.search.relevance.transformer.kendraintelligentranking.Kend
 import org.opensearch.search.relevance.transformer.ResultTransformer;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfigurationFactory;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.PersonalizeRankingResponseProcessor;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.client.PersonalizeClientSettings;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParametersExtBuilder;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.watcher.ResourceWatcherService;
 
-public class SearchRelevancePlugin extends Plugin implements ActionPlugin, SearchPlugin {
+public class SearchRelevancePlugin extends Plugin implements ActionPlugin, SearchPlugin, SearchPipelinePlugin {
 
   private OpenSearchClient openSearchClient;
   private KendraHttpClient kendraClient;
@@ -101,10 +106,18 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
   public List<SearchExtSpec<?>> getSearchExts() {
     Map<String, ResultTransformerConfigurationFactory> resultTransformerMap = getResultTransformerConfigurationFactories().stream()
             .collect(Collectors.toMap(ResultTransformerConfigurationFactory::getName, i -> i));
-    return Collections.singletonList(
-        new SearchExtSpec<>(SearchConfigurationExtBuilder.NAME,
-                input -> new SearchConfigurationExtBuilder(input, resultTransformerMap),
-                parser -> SearchConfigurationExtBuilder.parse(parser, resultTransformerMap)));
+    return List.of(new SearchExtSpec<>(SearchConfigurationExtBuilder.NAME,
+            input -> new SearchConfigurationExtBuilder(input, resultTransformerMap),
+            parser -> SearchConfigurationExtBuilder.parse(parser, resultTransformerMap)),
+            new SearchExtSpec<>(PersonalizeRequestParametersExtBuilder.NAME,
+                    input -> new PersonalizeRequestParametersExtBuilder(input),
+                    parser -> PersonalizeRequestParametersExtBuilder.parse(parser)));
   }
-  
+
+  @Override
+  public Map<String, Processor.Factory<SearchResponseProcessor>> getResponseProcessors(Processor.Parameters parameters) {
+    return Map.of(PersonalizeRankingResponseProcessor.TYPE,
+            new PersonalizeRankingResponseProcessor.Factory(
+                    PersonalizeClientSettings.getClientSettings(parameters.env.settings())));
+  }
 }
