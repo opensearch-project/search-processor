@@ -33,13 +33,6 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
-import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.CAMPAIGN_ARN_CONFIG_NAME;
-import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.IAM_ROLE_ARN_CONFIG_NAME;
-import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.RECIPE_CONFIG_NAME;
-import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.REGION_CONFIG_NAME;
-import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.ITEM_ID_FIELD_CONFIG_NAME;
-import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.WEIGHT_CONFIG_NAME;
-
 /**
  * This is a {@link SearchResponseProcessor} that applies Personalized intelligent ranking
  */
@@ -138,6 +131,12 @@ public class PersonalizeRankingResponseProcessor implements SearchResponseProces
 
     public static final class Factory implements Processor.Factory<SearchResponseProcessor> {
 
+        private static final String CAMPAIGN_ARN_CONFIG_NAME = "campaign_arn";
+        private static final String ITEM_ID_FIELD_CONFIG_NAME = "item_id_field";
+        private static final String IAM_ROLE_ARN_CONFIG_NAME = "iam_role_arn";
+        private static final String RECIPE_CONFIG_NAME = "recipe";
+        private static final String REGION_CONFIG_NAME = "aws_region";
+        private static final String WEIGHT_CONFIG_NAME = "weight";
         PersonalizeClientSettings personalizeClientSettings;
         private final BiFunction<AWSCredentialsProvider, String, PersonalizeClient> clientBuilder;
 
@@ -152,7 +151,6 @@ public class PersonalizeRankingResponseProcessor implements SearchResponseProces
 
         @Override
         public PersonalizeRankingResponseProcessor create(Map<String, Processor.Factory<SearchResponseProcessor>> processorFactories, String tag, String description, Map<String, Object> config) throws Exception {
-            // TODO: Handle validation as well as required vs non required config differentiation with related user error / exception
             String personalizeCampaign = ConfigurationUtils.readStringProperty(TYPE, tag, config, CAMPAIGN_ARN_CONFIG_NAME);
             String iamRoleArn = ConfigurationUtils.readOptionalStringProperty(TYPE, tag, config, IAM_ROLE_ARN_CONFIG_NAME);
             String recipe = ConfigurationUtils.readStringProperty(TYPE, tag, config, RECIPE_CONFIG_NAME);
