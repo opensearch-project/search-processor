@@ -8,7 +8,6 @@
 package org.opensearch.search.relevance.transformer.kendraintelligentranking;
 
 import org.apache.lucene.search.TotalHits;
-import org.mockito.Mockito;
 import org.opensearch.action.search.SearchRequest;
 import org.opensearch.common.bytes.BytesReference;
 import org.opensearch.common.settings.Setting;
@@ -24,13 +23,13 @@ import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfiguration;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraClientSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraHttpClient;
+import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraIntelligentClientTests;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfiguration.KendraIntelligentRankingProperties;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreRequest;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreResult;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreResultItem;
-import org.opensearch.test.OpenSearchTestCase;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -38,23 +37,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class KendraIntelligentRankerTests extends OpenSearchTestCase {
-    private static KendraHttpClient buildMockHttpClient(Function<RescoreRequest, RescoreResult> mockRescoreImpl) {
-        KendraHttpClient kendraHttpClient = Mockito.mock(KendraHttpClient.class);
-        Mockito.when(kendraHttpClient.isValid()).thenReturn(true);
-        Mockito.doAnswer(invocation -> {
-            RescoreRequest rescoreRequest = invocation.getArgument(0);
-            return mockRescoreImpl.apply(rescoreRequest);
-        }).when(kendraHttpClient).rescore(Mockito.any(RescoreRequest.class));
-        return kendraHttpClient;
-    }
-
-    private static KendraHttpClient buildMockHttpClient() {
-        return buildMockHttpClient(r -> new RescoreResult());
-    }
+public class KendraIntelligentRankerTests extends KendraIntelligentClientTests {
 
     public void testGetSettings() {
         List<Setting<?>> settings = new KendraIntelligentRanker(buildMockHttpClient()).getTransformerSettings();
