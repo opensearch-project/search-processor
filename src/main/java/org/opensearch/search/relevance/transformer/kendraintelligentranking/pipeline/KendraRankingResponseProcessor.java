@@ -140,19 +140,20 @@ public class KendraRankingResponseProcessor implements SearchResponseProcessor {
     /**
      * This is a factor that creates the KendraRankingResponseProcessor
      */
-    public static final class Factory implements Processor.Factory {
+    public static final class Factory implements Processor.Factory<SearchResponseProcessor>  {
 
         private final KendraClientSettings clientSettings;
 
         /**
          * Constructor for factory
+         * @param kendraClientSettings credentials to create kendra client
          */
         public Factory(KendraClientSettings kendraClientSettings) {
             this.clientSettings = kendraClientSettings;
         }
 
         public KendraRankingResponseProcessor create(
-                Map<String, Processor.Factory> processorFactories,
+                Map<String, Processor.Factory<SearchResponseProcessor>> processorFactories,
                 String tag,
                 String description,
                 Map<String, Object> config

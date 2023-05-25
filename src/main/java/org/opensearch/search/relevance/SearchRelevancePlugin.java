@@ -7,15 +7,6 @@
  */
 package org.opensearch.search.relevance;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
 import org.opensearch.action.support.ActionFilter;
 import org.opensearch.client.Client;
 import org.opensearch.cluster.metadata.IndexNameExpressionResolver;
@@ -32,20 +23,31 @@ import org.opensearch.plugins.SearchPlugin;
 import org.opensearch.repositories.RepositoriesService;
 import org.opensearch.script.ScriptService;
 import org.opensearch.search.pipeline.Processor;
+import org.opensearch.search.pipeline.SearchResponseProcessor;
 import org.opensearch.search.relevance.actionfilter.SearchActionFilter;
 import org.opensearch.search.relevance.client.OpenSearchClient;
 import org.opensearch.search.relevance.configuration.ResultTransformerConfigurationFactory;
-import org.opensearch.search.relevance.configuration.SearchConfigurationExtBuilder;
-import org.opensearch.search.relevance.transformer.ResultTransformer;
-import org.opensearch.search.relevance.transformer.kendraintelligentranking.KendraIntelligentRanker;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraClientSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.client.KendraHttpClient;
+import org.opensearch.search.relevance.configuration.SearchConfigurationExtBuilder;
+import org.opensearch.search.relevance.transformer.kendraintelligentranking.KendraIntelligentRanker;
+import org.opensearch.search.relevance.transformer.ResultTransformer;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankerSettings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfigurationFactory;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.pipeline.KendraRankingResponseProcessor;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.PersonalizeRankingResponseProcessor;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.client.PersonalizeClientSettings;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParametersExtBuilder;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.watcher.ResourceWatcherService;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 public class SearchRelevancePlugin extends Plugin implements ActionPlugin, SearchPlugin, SearchPipelinePlugin {
 
@@ -108,14 +110,17 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
     public List<SearchExtSpec<?>> getSearchExts() {
         Map<String, ResultTransformerConfigurationFactory> resultTransformerMap = getResultTransformerConfigurationFactories().stream()
                 .collect(Collectors.toMap(ResultTransformerConfigurationFactory::getName, i -> i));
-        return Collections.singletonList(
-                new SearchExtSpec<>(SearchConfigurationExtBuilder.NAME,
+        return List.of(new SearchExtSpec<>(SearchConfigurationExtBuilder.NAME,
                         input -> new SearchConfigurationExtBuilder(input, resultTransformerMap),
-                        parser -> SearchConfigurationExtBuilder.parse(parser, resultTransformerMap)));
+                        parser -> SearchConfigurationExtBuilder.parse(parser, resultTransformerMap)),
+                new SearchExtSpec<>(PersonalizeRequestParametersExtBuilder.NAME,
+                        input -> new PersonalizeRequestParametersExtBuilder(input),
+                        parser -> PersonalizeRequestParametersExtBuilder.parse(parser)));
     }
 
     @Override
-    public Map<String, Processor.Factory> getProcessors(Processor.Parameters parameters) {
-        return Map.of(KendraRankingResponseProcessor.TYPE, new KendraRankingResponseProcessor.Factory(this.kendraClientSettings));
+    public Map<String, Processor.Factory<SearchResponseProcessor>> getResponseProcessors(Processor.Parameters parameters) {
+        return Map.of(PersonalizeRankingResponseProcessor.TYPE, new PersonalizeRankingResponseProcessor.Factory(PersonalizeClientSettings.getClientSettings(parameters.env.settings())),
+                KendraRankingResponseProcessor.TYPE, new KendraRankingResponseProcessor.Factory(this.kendraClientSettings));
     }
 }
