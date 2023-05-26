@@ -11,5 +11,6 @@ public class Constants {
 
     public static final String PERSONALIZE_REQUEST_PARAMETERS = "personalize_request_parameters";
     public static final String USER_ID_PARAMETER = "user_id";
+    public static final String CONTEXT_PARAMETER = "context";
 
 }

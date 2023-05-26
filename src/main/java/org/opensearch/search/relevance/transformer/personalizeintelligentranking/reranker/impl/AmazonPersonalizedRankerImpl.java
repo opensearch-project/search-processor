@@ -9,12 +9,10 @@ package org.opensearch.search.relevance.transformer.personalizeintelligentrankin
 
 import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingRequest;
 import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingResult;
-import com.amazonaws.services.personalizeruntime.model.PredictedItem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
-import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.Constants;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.client.PersonalizeClient;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.PersonalizeIntelligentRankerConfiguration;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParameters;
@@ -22,6 +20,7 @@ import org.opensearch.search.relevance.transformer.personalizeintelligentranking
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -66,12 +65,21 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
                         .collect(Collectors.toList());
             }
             logger.info("Document Ids to re-rank with Personalize: {}", Arrays.toString(documentIdsToRank.toArray()));
-            // TODO: Parse context from request parameters
             String userId = requestParameters.getUserId();
+            Map<String, String> context = requestParameters.getContext() != null ?
+                                            requestParameters.getContext().entrySet().stream()
+                                                    .filter(e -> e.getValue() instanceof String)
+                                                    .collect(Collectors.toMap(Map.Entry::getKey, e -> (String) e.getValue()))
+                                            : null;
             logger.info("User ID from request parameters. User ID: {}", userId);
+            if (context != null && !context.isEmpty()) {
+                logger.info("Personalize context provided in the search request");
+            }
+
             GetPersonalizedRankingRequest personalizeRequest = new GetPersonalizedRankingRequest()
                     .withCampaignArn(rankerConfig.getPersonalizeCampaign())
                     .withInputList(documentIdsToRank)
+                    .withContext(context)
                     .withUserId(userId);
             GetPersonalizedRankingResult result = personalizeClient.getPersonalizedRanking(personalizeRequest);
 

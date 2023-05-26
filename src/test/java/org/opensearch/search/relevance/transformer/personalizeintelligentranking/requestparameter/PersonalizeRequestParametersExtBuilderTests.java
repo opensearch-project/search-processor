@@ -15,11 +15,15 @@ import org.opensearch.core.xcontent.XContentParser;
 import org.opensearch.test.OpenSearchTestCase;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class PersonalizeRequestParametersExtBuilderTests extends OpenSearchTestCase {
 
     public void testXContentRoundTrip() throws IOException {
-        PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters("28");
+        Map<String, Object> context = new HashMap<>();
+        context.put("contextKey", "contextValue");
+        PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters("28", context);
         PersonalizeRequestParametersExtBuilder personalizeExtBuilder = new PersonalizeRequestParametersExtBuilder();
         personalizeExtBuilder.setRequestParameters(requestParameters);
         XContentType xContentType = randomFrom(XContentType.values());
@@ -36,6 +40,7 @@ public class PersonalizeRequestParametersExtBuilderTests extends OpenSearchTestC
     public void testStreamRoundTrip() throws IOException {
         PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters();
         requestParameters.setUserId("28");
+        requestParameters.setContext(new HashMap<>());
         PersonalizeRequestParametersExtBuilder personalizeExtBuilder = new PersonalizeRequestParametersExtBuilder();
         personalizeExtBuilder.setRequestParameters(requestParameters);
         BytesStreamOutput bytesStreamOutput = new BytesStreamOutput();
