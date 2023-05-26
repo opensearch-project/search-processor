@@ -52,7 +52,7 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
             List<SearchHit> originalHits = Arrays.asList(hits.getHits());
             String itemIdfield = rankerConfig.getItemIdField();
             List<String> documentIdsToRank;
-            // If item field is not specified in the configruation then use default _id field.
+            // If item field is not specified in the configuration then use default _id field.
             if (!itemIdfield.isEmpty()) {
                 documentIdsToRank = originalHits.stream()
                         .filter(h -> h.getSourceAsMap().get(itemIdfield) != null)
@@ -68,7 +68,13 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
             String userId = requestParameters.getUserId();
             Map<String, String> context = requestParameters.getContext() != null ?
                                             requestParameters.getContext().entrySet().stream()
-                                                    .filter(e -> e.getValue() instanceof String)
+                                                    .filter(e -> {
+                                                        try {
+                                                            return isValidPersonalizeContext(e);
+                                                        } catch (IllegalArgumentException iae) {
+                                                            throw iae;
+                                                        }
+                                                    })
                                                     .collect(Collectors.toMap(Map.Entry::getKey, e -> (String) e.getValue()))
                                             : null;
             logger.info("User ID from request parameters. User ID: {}", userId);
@@ -110,5 +116,14 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
             logger.error("Required Personalized ranker configuration is missing");
         }
         return isValidPersonalizeConfig;
+    }
+
+    private boolean isValidPersonalizeContext(Map.Entry<String, Object> contextEntry) throws IllegalArgumentException {
+        if (contextEntry.getValue() instanceof String) {
+            return true;
+        } else {
+            throw new IllegalArgumentException("Personalize context value is not of type String. " +
+                    "Invalid context value: " + contextEntry.getValue());
+        }
     }
 }

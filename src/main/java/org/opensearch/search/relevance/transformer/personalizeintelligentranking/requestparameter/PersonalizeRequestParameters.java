@@ -20,11 +20,11 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 
-import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.Constants.USER_ID_PARAMETER;
-import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.Constants.CONTEXT_PARAMETER;
-import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.Constants.PERSONALIZE_REQUEST_PARAMETERS;
-
 public class PersonalizeRequestParameters implements Writeable, ToXContentObject {
+
+    static final String PERSONALIZE_REQUEST_PARAMETERS = "personalize_request_parameters";
+    private static final String USER_ID_PARAMETER = "user_id";
+    private static final String CONTEXT_PARAMETER = "context";
 
     private static final ObjectParser<PersonalizeRequestParameters, Void> PARSER;
     private static final ParseField USER_ID = new ParseField(USER_ID_PARAMETER);
