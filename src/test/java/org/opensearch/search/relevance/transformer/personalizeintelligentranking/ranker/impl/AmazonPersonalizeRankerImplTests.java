@@ -19,6 +19,8 @@ import org.opensearch.search.relevance.transformer.personalizeintelligentranking
 import org.opensearch.test.OpenSearchTestCase;
 
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 import static org.mockito.ArgumentMatchers.any;
 
@@ -49,6 +51,85 @@ public class AmazonPersonalizeRankerImplTests extends OpenSearchTestCase {
         String blankItemIdField = "";
         PersonalizeIntelligentRankerConfiguration rankerConfig =
                 new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, blankItemIdField, region, weight);
+        PersonalizeClient client = Mockito.mock(PersonalizeClient.class);
+        Mockito.when(client.getPersonalizedRanking(any())).thenReturn(PersonalizeRuntimeTestUtil.buildGetPersonalizedRankingResult());
+
+        AmazonPersonalizedRankerImpl ranker = new AmazonPersonalizedRankerImpl(rankerConfig, client);
+        PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters();
+        requestParameters.setUserId("28");
+        SearchHits responseHits = SearchTestUtil.getSampleSearchHitsForPersonalize(10);
+        SearchHits transformedHits = ranker.rerank(responseHits, requestParameters);
+        assertEquals(responseHits.getHits().length, transformedHits.getHits().length);
+    }
+
+    public void testReRankWithRequestParameterContext() throws IOException {
+        PersonalizeIntelligentRankerConfiguration rankerConfig =
+                new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdField, region, weight);
+        PersonalizeClient client = Mockito.mock(PersonalizeClient.class);
+        Mockito.when(client.getPersonalizedRanking(any())).thenReturn(PersonalizeRuntimeTestUtil.buildGetPersonalizedRankingResult());
+
+        AmazonPersonalizedRankerImpl ranker = new AmazonPersonalizedRankerImpl(rankerConfig, client);
+        Map<String, Object> context = new HashMap<>();
+        context.put("contextKey", "contextValue");
+        PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters();
+        requestParameters.setUserId("28");
+        requestParameters.setContext(context);
+        SearchHits responseHits = SearchTestUtil.getSampleSearchHitsForPersonalize(10);
+        SearchHits transformedHits = ranker.rerank(responseHits, requestParameters);
+        assertEquals(responseHits.getHits().length, transformedHits.getHits().length);
+    }
+
+    public void testReRankWithInvalidRequestParameterContext() throws IOException {
+        PersonalizeIntelligentRankerConfiguration rankerConfig =
+                new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdField, region, weight);
+        PersonalizeClient client = Mockito.mock(PersonalizeClient.class);
+        Mockito.when(client.getPersonalizedRanking(any())).thenReturn(PersonalizeRuntimeTestUtil.buildGetPersonalizedRankingResult());
+
+        AmazonPersonalizedRankerImpl ranker = new AmazonPersonalizedRankerImpl(rankerConfig, client);
+        Map<String, Object> context = new HashMap<>();
+        context.put("contextKey", 2);
+        PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters();
+        requestParameters.setUserId("28");
+        requestParameters.setContext(context);
+        SearchHits responseHits = SearchTestUtil.getSampleSearchHitsForPersonalize(10);
+        SearchHits transformedHits = ranker.rerank(responseHits, requestParameters);
+        assertEquals(responseHits.getHits().length, transformedHits.getHits().length);
+    }
+
+    public void testReRankWithNoUserId() throws IOException {
+        PersonalizeIntelligentRankerConfiguration rankerConfig =
+                new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdField, region, weight);
+        PersonalizeClient client = Mockito.mock(PersonalizeClient.class);
+        Mockito.when(client.getPersonalizedRanking(any())).thenReturn(PersonalizeRuntimeTestUtil.buildGetPersonalizedRankingResult());
+
+        AmazonPersonalizedRankerImpl ranker = new AmazonPersonalizedRankerImpl(rankerConfig, client);
+        Map<String, Object> context = new HashMap<>();
+        context.put("contextKey", "contextValue");
+        PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters();
+        requestParameters.setContext(context);
+        SearchHits responseHits = SearchTestUtil.getSampleSearchHitsForPersonalize(10);
+        SearchHits transformedHits = ranker.rerank(responseHits, requestParameters);
+        assertEquals(responseHits.getHits().length, transformedHits.getHits().length);
+    }
+
+    public void testReRankWithEmptyItemIdField() throws IOException {
+        String itemIdEmpty = "";
+        PersonalizeIntelligentRankerConfiguration rankerConfig =
+                new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdEmpty, region, weight);
+        PersonalizeClient client = Mockito.mock(PersonalizeClient.class);
+        Mockito.when(client.getPersonalizedRanking(any())).thenReturn(PersonalizeRuntimeTestUtil.buildGetPersonalizedRankingResult());
+
+        AmazonPersonalizedRankerImpl ranker = new AmazonPersonalizedRankerImpl(rankerConfig, client);
+        PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters();
+        requestParameters.setUserId("28");
+        SearchHits responseHits = SearchTestUtil.getSampleSearchHitsForPersonalize(10);
+        SearchHits transformedHits = ranker.rerank(responseHits, requestParameters);
+        assertEquals(responseHits.getHits().length, transformedHits.getHits().length);
+    }
+
+    public void testReRankWithNullItemIdField() throws IOException {
+        PersonalizeIntelligentRankerConfiguration rankerConfig =
+                new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, null, region, weight);
         PersonalizeClient client = Mockito.mock(PersonalizeClient.class);
         Mockito.when(client.getPersonalizedRanking(any())).thenReturn(PersonalizeRuntimeTestUtil.buildGetPersonalizedRankingResult());
 

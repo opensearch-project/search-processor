@@ -19,19 +19,19 @@ import org.opensearch.env.Environment;
 import org.opensearch.env.TestEnvironment;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
+import org.opensearch.search.builder.SearchSourceBuilder;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.client.PersonalizeClient;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.client.PersonalizeClientSettings;
-import org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker.PersonalizedRankerFactory;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParameters;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParametersExtBuilder;
 import org.opensearch.test.OpenSearchTestCase;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.WeakHashMap;
 
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.AMAZON_PERSONALIZED_RANKING_RECIPE_NAME;
 
 public class PersonalizeResponseProcessorTests extends OpenSearchTestCase {
@@ -42,7 +42,7 @@ public class PersonalizeResponseProcessorTests extends OpenSearchTestCase {
     private String personalizeCampaign = "arn:aws:personalize:us-west-2:000000000000:campaign/test-campaign";
     private String iamRoleArn = "";
     private String recipe = "sample-personalize-recipe";
-    private String itemIdField = "ITEM_ID";
+    private String itemIdField = "";
     private String region = "us-west-2";
     private double weight = 0.25;
 
@@ -120,6 +120,84 @@ public class PersonalizeResponseProcessorTests extends OpenSearchTestCase {
         PersonalizeRankingResponseProcessor personalizeResponseProcessor =
                 factory.create(Collections.emptyMap(), "testTag", "testingAllFields", configuration);
         SearchRequest searchRequest = new SearchRequest();
+        SearchHit[] searchHits = new SearchHit[10];
+        for (int i = 0; i < searchHits.length; i++) {
+            searchHits[i] = new SearchHit(i, Integer.toString(i), Collections.emptyMap(), Collections.emptyMap());
+            searchHits[i].score(1.0f);
+        }
+        SearchHits hits = new SearchHits(searchHits, new TotalHits(searchHits.length, TotalHits.Relation.EQUAL_TO), 1.0f);
+        SearchResponseSections searchResponseSections = new SearchResponseSections(hits, null, null, false, false, null, 0);
+        SearchResponse searchResponse = new SearchResponse(searchResponseSections, null, 1, 1, 0, 1, new ShardSearchFailure[0], null);
+
+        personalizeResponseProcessor.processResponse(searchRequest, searchResponse);
+    }
+
+    public void testProcessorWithHitsAndSearchProcessorExt() throws Exception {
+        PersonalizeClient mockClient = mock(PersonalizeClient.class);
+
+        PersonalizeRankingResponseProcessor.Factory factory
+                = new PersonalizeRankingResponseProcessor.Factory(this.clientSettings, (cp, r) -> mockClient);
+
+        Map<String, Object> configuration = new HashMap<>();
+        configuration.put("campaign_arn", personalizeCampaign);
+        configuration.put("item_id_field", itemIdField);
+        configuration.put("recipe", AMAZON_PERSONALIZED_RANKING_RECIPE_NAME);
+        configuration.put("weight", String.valueOf(weight));
+        configuration.put("iam_role_arn", iamRoleArn);
+        configuration.put("aws_region", region);
+
+        PersonalizeRankingResponseProcessor personalizeResponseProcessor =
+                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", configuration);
+
+        Map<String, Object> personalizeContext = new HashMap<>();
+        personalizeContext.put("contextKey2", "contextValue2");
+        PersonalizeRequestParameters personalizeRequestParams = new PersonalizeRequestParameters("user_1", personalizeContext);
+        PersonalizeRequestParametersExtBuilder extBuilder = new PersonalizeRequestParametersExtBuilder();
+        extBuilder.setRequestParameters(personalizeRequestParams);
+
+        SearchSourceBuilder sourceBuilder = SearchSourceBuilder.searchSource()
+                .ext(List.of(extBuilder));
+
+        SearchRequest searchRequest = new SearchRequest().source(sourceBuilder);
+        SearchHit[] searchHits = new SearchHit[10];
+        for (int i = 0; i < searchHits.length; i++) {
+            searchHits[i] = new SearchHit(i, Integer.toString(i), Collections.emptyMap(), Collections.emptyMap());
+            searchHits[i].score(1.0f);
+        }
+        SearchHits hits = new SearchHits(searchHits, new TotalHits(searchHits.length, TotalHits.Relation.EQUAL_TO), 1.0f);
+        SearchResponseSections searchResponseSections = new SearchResponseSections(hits, null, null, false, false, null, 0);
+        SearchResponse searchResponse = new SearchResponse(searchResponseSections, null, 1, 1, 0, 1, new ShardSearchFailure[0], null);
+
+        personalizeResponseProcessor.processResponse(searchRequest, searchResponse);
+    }
+
+    public void testProcessorWithHitsWithInvalidPersonalizeContext() throws Exception {
+        PersonalizeClient mockClient = mock(PersonalizeClient.class);
+
+        PersonalizeRankingResponseProcessor.Factory factory
+                = new PersonalizeRankingResponseProcessor.Factory(this.clientSettings, (cp, r) -> mockClient);
+
+        Map<String, Object> configuration = new HashMap<>();
+        configuration.put("campaign_arn", personalizeCampaign);
+        configuration.put("item_id_field", itemIdField);
+        configuration.put("recipe", AMAZON_PERSONALIZED_RANKING_RECIPE_NAME);
+        configuration.put("weight", String.valueOf(weight));
+        configuration.put("iam_role_arn", iamRoleArn);
+        configuration.put("aws_region", region);
+
+        PersonalizeRankingResponseProcessor personalizeResponseProcessor =
+                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", configuration);
+
+        Map<String, Object> personalizeContext = new HashMap<>();
+        personalizeContext.put("contextKey2", 5);
+        PersonalizeRequestParameters personalizeRequestParams = new PersonalizeRequestParameters("user_1", personalizeContext);
+        PersonalizeRequestParametersExtBuilder extBuilder = new PersonalizeRequestParametersExtBuilder();
+        extBuilder.setRequestParameters(personalizeRequestParams);
+
+        SearchSourceBuilder sourceBuilder = SearchSourceBuilder.searchSource()
+                .ext(List.of(extBuilder));
+
+        SearchRequest searchRequest = new SearchRequest().source(sourceBuilder);
         SearchHit[] searchHits = new SearchHit[10];
         for (int i = 0; i < searchHits.length; i++) {
             searchHits[i] = new SearchHit(i, Integer.toString(i), Collections.emptyMap(), Collections.emptyMap());
