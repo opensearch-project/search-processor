@@ -29,6 +29,7 @@ public class SearchTestUtil {
                     .field("title", "This is the title for document " + i)
                     .endObject();
             hitsArray[i] = new SearchHit(i, "doc" + i, Map.of(), Map.of());
+            hitsArray[i].score((float) (numHits-i)/10);
             hitsArray[i].sourceRef(BytesReference.bytes(sourceContent));
         }
         SearchHits searchHits = new SearchHits(hitsArray, new TotalHits(numHits, TotalHits.Relation.EQUAL_TO), 1.0f);
