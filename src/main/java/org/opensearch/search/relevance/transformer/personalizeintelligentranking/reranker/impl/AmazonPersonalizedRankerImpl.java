@@ -68,14 +68,7 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
             String userId = requestParameters.getUserId();
             Map<String, String> context = requestParameters.getContext() != null ?
                                             requestParameters.getContext().entrySet().stream()
-                                                    .filter(e -> {
-                                                        try {
-                                                            return isValidPersonalizeContext(e);
-                                                        } catch (IllegalArgumentException iae) {
-                                                            throw iae;
-                                                        }
-                                                    })
-                                                    .collect(Collectors.toMap(Map.Entry::getKey, e -> (String) e.getValue()))
+                                                    .collect(Collectors.toMap(Map.Entry::getKey, e -> isValidPersonalizeContext(e)))
                                             : null;
             logger.info("User ID from request parameters. User ID: {}", userId);
             if (context != null && !context.isEmpty()) {
@@ -118,9 +111,9 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
         return isValidPersonalizeConfig;
     }
 
-    private boolean isValidPersonalizeContext(Map.Entry<String, Object> contextEntry) throws IllegalArgumentException {
+    private String isValidPersonalizeContext(Map.Entry<String, Object> contextEntry) throws IllegalArgumentException {
         if (contextEntry.getValue() instanceof String) {
-            return true;
+            return (String) contextEntry.getValue();
         } else {
             throw new IllegalArgumentException("Personalize context value is not of type String. " +
                     "Invalid context value: " + contextEntry.getValue());
