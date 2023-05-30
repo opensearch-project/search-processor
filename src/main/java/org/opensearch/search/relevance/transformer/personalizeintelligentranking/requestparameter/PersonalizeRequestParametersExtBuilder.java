@@ -18,7 +18,7 @@ import org.opensearch.search.SearchExtBuilder;
 import java.io.IOException;
 import java.util.Objects;
 
-import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.Constants.PERSONALIZE_REQUEST_PARAMETERS;
+import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParameters.PERSONALIZE_REQUEST_PARAMETERS;
 
 public class PersonalizeRequestParametersExtBuilder extends SearchExtBuilder {
     private static final Logger logger = LogManager.getLogger(PersonalizeRequestParametersExtBuilder.class);
