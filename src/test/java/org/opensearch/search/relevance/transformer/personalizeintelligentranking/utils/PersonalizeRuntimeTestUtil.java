@@ -31,4 +31,66 @@ public class PersonalizeRuntimeTestUtil {
                 .withRecommendationId("sampleRecommendationId");
         return result;
     }
+
+    public static GetPersonalizedRankingResult buildGetPersonalizedRankingResult(int numOfHits) {
+        List<PredictedItem> predictedItems = new ArrayList<>();
+        for(int i = numOfHits; i >= 1; i--){
+            PredictedItem predictedItem = new PredictedItem().
+                    withScore((double) i/10).
+                    withItemId(String.valueOf(i-1));
+            predictedItems.add(predictedItem);
+        }
+        GetPersonalizedRankingResult result = new GetPersonalizedRankingResult()
+                .withPersonalizedRanking(predictedItems)
+                .withRecommendationId("sampleRecommendationId");
+        return result;
+    }
+
+
+    public static GetPersonalizedRankingResult buildGetPersonalizedRankingResultWhenItemIdConfigIsEmpty(int numOfHits) {
+        List<PredictedItem> predictedItems = new ArrayList<>();
+        for(int i = numOfHits; i >= 1; i--){
+            PredictedItem predictedItem = new PredictedItem().
+                    withScore((double) i/10).
+                    withItemId("doc"+ (i - 1));
+            predictedItems.add(predictedItem);
+        }
+
+        GetPersonalizedRankingResult result = new GetPersonalizedRankingResult()
+                .withPersonalizedRanking(predictedItems)
+                .withRecommendationId("sampleRecommendationId");
+        return result;
+    }
+
+    public static ArrayList<String> expectedRankedItemIdsWhenWeightIsOne(int numOfHits){
+        ArrayList<String> expectedRankedItemIds = new ArrayList<>();
+        for(int i = numOfHits; i >= 1; i--){
+            expectedRankedItemIds.add(String.valueOf(i-1));
+        }
+        return expectedRankedItemIds;
+    }
+
+    public static ArrayList<String> expectedRankedItemIdsWhenWeightIsZero(int numOfHits){
+        ArrayList<String> expectedRankedItemIds = new ArrayList<>();
+        for(int i = 0; i <numOfHits; i++){
+            expectedRankedItemIds.add(String.valueOf(i));
+        }
+        return expectedRankedItemIds;
+    }
+
+    public static ArrayList<String> expectedRankedItemIdsWhenWeightIsOneWithNullItemIdField(int numOfHits){
+        ArrayList<String> expectedRankedItemIds = new ArrayList<>();
+        for(int i = numOfHits; i >= 1; i--){
+            expectedRankedItemIds.add("doc" + (i - 1));
+        }
+        return expectedRankedItemIds;
+    }
+
+    public static ArrayList<String> expectedRankedItemIdsWhenWeightIsZeroWithNullItemIdField(int numOfHits){
+        ArrayList<String> expectedRankedItemIds = new ArrayList<>();
+        for(int i = 0; i <numOfHits; i++){
+            expectedRankedItemIds.add("doc" + i);
+        }
+        return expectedRankedItemIds;
+    }
 }
