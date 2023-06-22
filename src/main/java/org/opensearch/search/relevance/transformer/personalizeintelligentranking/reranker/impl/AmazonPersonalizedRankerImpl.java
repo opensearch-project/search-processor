@@ -9,8 +9,10 @@ package org.opensearch.search.relevance.transformer.personalizeintelligentrankin
 
 import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingRequest;
 import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingResult;
+import com.amazonaws.services.personalizeruntime.model.PredictedItem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.lucene.search.TotalHits;
 import org.opensearch.search.SearchHit;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.client.PersonalizeClient;
@@ -18,7 +20,11 @@ import org.opensearch.search.relevance.transformer.personalizeintelligentranking
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParameters;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker.PersonalizedRanker;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -82,13 +88,81 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
                     .withUserId(userId);
             GetPersonalizedRankingResult result = personalizeClient.getPersonalizedRanking(personalizeRequest);
 
-            //TODO: Combine Personalize and open search result. Change the result after transform logic is implemented
-            return hits;
+            List<PredictedItem> personalizeRrankingResult = result.getPersonalizedRanking();
+            Map<String, Float> idToPersonalizeRankingScoreMap = new HashMap<>();
+            Map<String, Float> idToOpenSearchScoreMap = new HashMap<>();
+            Map<String, SearchHit> itemIdToSearchHitMap = new HashMap<>();
+            // Build a map with key as item id and value as personalize ranking score
+            for (PredictedItem item : personalizeRrankingResult) {
+                idToPersonalizeRankingScoreMap.put(item.getItemId(), item.getScore().floatValue());
+            }
+
+            // Build a map with key as item id and value as open search scores and another map
+            // with key as item id and value as corresponding search hit
+            for (SearchHit hit : originalHits) {
+                if (!itemIdfield.isEmpty()){
+                    idToOpenSearchScoreMap.put(hit.getSourceAsMap().get(itemIdfield).toString(), hit.getScore());
+                    itemIdToSearchHitMap.put(hit.getSourceAsMap().get(itemIdfield).toString(), hit);
+                }
+                else{
+                    idToOpenSearchScoreMap.put(hit.getId(), hit.getScore());
+                    itemIdToSearchHitMap.put(hit.getId(), hit);
+                }
+            }
+
+
+            float weight = (float) rankerConfig.getWeight();
+            SearchHits newHits = combineScores(idToPersonalizeRankingScoreMap, idToOpenSearchScoreMap,
+                    itemIdToSearchHitMap, hits.getTotalHits(), weight);
+            return newHits;
         } catch (Exception ex) {
             logger.error("Failed to re rank with Personalize. Returning original search results without Personalize re ranking.", ex);
             return hits;
         }
     }
+
+    //Combine open search hits and personalize campaign response
+    public SearchHits combineScores(Map<String, Float> idToPersonalizeRankingScoreMap,
+                                     Map<String, Float> idToOpenSearchScoreMap,
+                                     Map<String, SearchHit> itemIdToSearchHitMap,
+                                     TotalHits totalHits, float weight) {
+        //Update open search score based on the personalize campaign response for each item id
+        List<String> openSearchItemId = new ArrayList<String>(idToOpenSearchScoreMap.keySet());
+        for (String itemId : openSearchItemId) {
+            if(idToPersonalizeRankingScoreMap.containsKey(itemId)){
+                float personalizedScore = idToPersonalizeRankingScoreMap.get(itemId);
+                float openSearchScore = idToOpenSearchScoreMap.get(itemId);
+                float combinedScore = (float) (weight / Math.log(openSearchScore + 1)
+                        + (1 - weight) / Math.log(personalizedScore + 1));
+                idToOpenSearchScoreMap.put(itemId, combinedScore);
+            }
+        }
+
+        //Create a new list of search hits in the decreasing order of the combined scores
+        Map<String, Float> sortedScores = sortByValue(idToOpenSearchScoreMap);
+
+        List<SearchHit> rerankedHits = sortedScores.keySet().stream()
+                .map(itemId -> {
+                    SearchHit hit = itemIdToSearchHitMap.get(itemId);
+                    hit.score(sortedScores.get(itemId));
+                    return hit;
+                })
+                .collect(Collectors.toList());
+        float maxScore = sortedScores.values().stream().max(Float::compare).orElse(0f);
+        return new SearchHits(rerankedHits.toArray(new SearchHit[0]), totalHits, maxScore);
+    }
+
+
+    //Sort map by reverse order of the values
+    public Map<String, Float> sortByValue(Map<String, Float> map) {
+        return map.entrySet().stream()
+                .sorted(Map.Entry.<String, Float>comparingByValue().reversed())
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+    }
+
 
     /**
      * Validate Personalize configuration for calling Personalize service
