@@ -7,7 +7,6 @@
  */
 package org.opensearch.search.relevance.transformer.personalizeintelligentranking.utils;
 import com.amazonaws.arn.Arn;
-import org.apache.commons.lang3.StringUtils;
 import org.opensearch.ingest.ConfigurationUtils;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.PersonalizeIntelligentRankerConfiguration;
 
@@ -41,7 +40,7 @@ public class ValidationUtil {
         }
         // Validate IAM Role Arn for Personalize access
         String iamRoleArn = config.getIamRoleArn();
-        if(!StringUtils.isEmpty(iamRoleArn) && !isValidCampaignOrRoleArn(iamRoleArn, "iam")) {
+        if(!(iamRoleArn != null || iamRoleArn.isBlank()) && !isValidCampaignOrRoleArn(iamRoleArn, "iam")) {
             throw ConfigurationUtils.newConfigurationException(processorType, processorTag, "iam_role_arn", "invalid format for Personalize iam role arn");
         }
         // Validate Personalize recipe
@@ -53,13 +52,9 @@ public class ValidationUtil {
     private static boolean isValidCampaignOrRoleArn(String arn, String expectedService) {
         try {
             Arn arnObj = Arn.fromString(arn);
-            String arnService = arnObj.getService();
-            if (!arnService.equals(expectedService)) {
-                return false;
-            }
+            return arnObj.getService().equals(expectedService);
         } catch (IllegalArgumentException iae) {
             return false;
         }
-        return true;
     }
 }
