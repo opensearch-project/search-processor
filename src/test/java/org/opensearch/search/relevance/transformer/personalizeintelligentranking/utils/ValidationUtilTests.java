@@ -19,7 +19,7 @@ public class ValidationUtilTests extends OpenSearchTestCase {
     private static final String TYPE = "personalize_ranking";
     private static final String TAG = "test_tag";
     private String personalizeCampaign = "arn:aws:personalize:us-west-2:000000000000:campaign/test-campaign";
-    private String iamRoleArn = "arn:aws:iam::493477146422:role/PersonalizeOSTest";
+    private String iamRoleArn = "arn:aws:iam::000000000000:role/test";
     private String itemIdField = "ITEM_ID";
     private String region = "us-west-2";
     private double weight = 1.0;
@@ -33,6 +33,13 @@ public class ValidationUtilTests extends OpenSearchTestCase {
     public void testInvalidCampaignArn () {
         PersonalizeIntelligentRankerConfiguration rankerConfig =
                 new PersonalizeIntelligentRankerConfiguration("invalid:campaign/test", iamRoleArn, AMAZON_PERSONALIZED_RANKING_RECIPE_NAME, itemIdField, region, weight);
+        expectThrows(OpenSearchParseException.class, () ->
+                ValidationUtil.validatePersonalizeIntelligentRankerConfiguration(rankerConfig, TYPE, TAG));
+    }
+
+    public void testEmptyCampaignArn () {
+        PersonalizeIntelligentRankerConfiguration rankerConfig =
+                new PersonalizeIntelligentRankerConfiguration("", iamRoleArn, AMAZON_PERSONALIZED_RANKING_RECIPE_NAME, itemIdField, region, weight);
         expectThrows(OpenSearchParseException.class, () ->
                 ValidationUtil.validatePersonalizeIntelligentRankerConfiguration(rankerConfig, TYPE, TAG));
     }
@@ -56,6 +63,12 @@ public class ValidationUtilTests extends OpenSearchTestCase {
                 new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, "arn:aws:es:us-west-2:000000000000:domain/testmovies", AMAZON_PERSONALIZED_RANKING_RECIPE_NAME, itemIdField, region, weight);
         expectThrows(OpenSearchParseException.class, () ->
                 ValidationUtil.validatePersonalizeIntelligentRankerConfiguration(rankerConfig, TYPE, TAG));
+    }
+
+    public void testEmptyIamRoleArnAllowed () {
+        PersonalizeIntelligentRankerConfiguration rankerConfig =
+                new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, "", AMAZON_PERSONALIZED_RANKING_RECIPE_NAME, itemIdField, region, weight);
+        ValidationUtil.validatePersonalizeIntelligentRankerConfiguration(rankerConfig, TYPE, TAG);
     }
 
     public void testInvalidWeightValueGreaterThanRange () {

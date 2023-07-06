@@ -54,7 +54,7 @@ public class ValidationUtil {
         try {
             Arn arnObj = Arn.fromString(arn);
             String arnService = arnObj.getService();
-            if (arnObj.getResource() == null || !arnService.equals(expectedService)) {
+            if (!arnService.equals(expectedService)) {
                 return false;
             }
         } catch (IllegalArgumentException iae) {

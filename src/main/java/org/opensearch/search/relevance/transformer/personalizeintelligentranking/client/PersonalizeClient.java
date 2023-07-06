@@ -8,6 +8,7 @@
 package org.opensearch.search.relevance.transformer.personalizeintelligentranking.client;
 
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.ClientConfiguration;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.services.personalizeruntime.AmazonPersonalizeRuntime;
 import com.amazonaws.services.personalizeruntime.AmazonPersonalizeRuntimeClientBuilder;
@@ -24,6 +25,7 @@ import java.security.PrivilegedAction;
  */
 public class PersonalizeClient implements Closeable {
     private final AmazonPersonalizeRuntime personalizeRuntime;
+    private static final String USER_AGENT_PREFIX = "PersonalizeOpenSearchPlugin";
 
     /**
      * Constructor for Amazon Personalize client
@@ -31,10 +33,13 @@ public class PersonalizeClient implements Closeable {
      * @param awsRegion AWS region where Amazon Personalize campaign is hosted
      */
     public PersonalizeClient(AWSCredentialsProvider credentialsProvider, String awsRegion) {
+        ClientConfiguration clientConfiguration = new ClientConfiguration()
+                .withUserAgentPrefix(USER_AGENT_PREFIX);
         personalizeRuntime = AccessController.doPrivileged(
                 (PrivilegedAction<AmazonPersonalizeRuntime>) () -> AmazonPersonalizeRuntimeClientBuilder.standard()
                         .withCredentials(credentialsProvider)
                         .withRegion(awsRegion)
+                        .withClientConfiguration(clientConfiguration)
                         .build());
     }
 
