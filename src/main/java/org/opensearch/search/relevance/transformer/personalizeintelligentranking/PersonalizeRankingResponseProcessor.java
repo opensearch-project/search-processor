@@ -42,7 +42,7 @@ public class PersonalizeRankingResponseProcessor extends AbstractProcessor imple
 
     private static final Logger logger = LogManager.getLogger(PersonalizeRankingResponseProcessor.class);
 
-    public static final String TYPE = "personalize_ranking";
+    public static final String TYPE = "personalized_search_ranking";
     private final String tag;
     private final String description;
     private final PersonalizeClient personalizeClient;

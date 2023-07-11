@@ -10,7 +10,6 @@ package org.opensearch.search.relevance.transformer.personalizeintelligentrankin
 import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingRequest;
 import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingResult;
 import com.amazonaws.services.personalizeruntime.model.PredictedItem;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.opensearch.ingest.ConfigurationUtils;
@@ -62,7 +61,7 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
             String itemIdfield = rankerConfig.getItemIdField();
             List<String> documentIdsToRank;
             // If item field is not specified in the configuration then use default _id field.
-            if (!StringUtils.isEmpty(itemIdfield)) {
+            if (itemIdfield != null && !itemIdfield.isBlank()) {
                 documentIdsToRank = originalHits.stream()
                         .filter(h -> h.getSourceAsMap().get(itemIdfield) != null)
                         .map(h -> h.getSourceAsMap().get(itemIdfield).toString())
@@ -117,7 +116,8 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
         for (int i = 0 ; i < totalHits ; i++) {
             String openSearchItemId;
             SearchHit hit = originalHits.getAt(i);
-            if (!StringUtils.isEmpty(rankerConfig.getItemIdField())) {
+            String itemIdField = rankerConfig.getItemIdField();
+            if (itemIdField != null && !(itemIdField.isBlank())) {
                 openSearchItemId = hit.getSourceAsMap().get(rankerConfig.getItemIdField()).toString();
             } else {
                 openSearchItemId = hit.getId();
@@ -139,7 +139,7 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
      * @param requestParameters Request parameters for Personalize present in search request
      */
     private void validatePersonalizeRequestParams(PersonalizeRequestParameters requestParameters) {
-        if (requestParameters == null || StringUtils.isEmpty(requestParameters.getUserId())) {
+        if (requestParameters == null || requestParameters.getUserId() == null || requestParameters.getUserId().isBlank()) {
             throw ConfigurationUtils.newConfigurationException(PersonalizeRankingResponseProcessor.TYPE, "", "user_id",
                     "required Personalize request parameter is missing");
         }

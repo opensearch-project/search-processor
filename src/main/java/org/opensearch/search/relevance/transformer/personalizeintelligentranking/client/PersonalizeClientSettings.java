@@ -28,17 +28,17 @@ public final class PersonalizeClientSettings {
     /**
      * The access key (ie login id) for connecting to Personalize.
      */
-    public static final Setting<SecureString> ACCESS_KEY_SETTING = SecureSetting.secureString("personalize_intelligent_ranking.aws.access_key", null);
+    public static final Setting<SecureString> ACCESS_KEY_SETTING = SecureSetting.secureString("personalized_search_ranking.aws.access_key", null);
 
     /**
      * The secret key (ie password) for connecting to Personalize.
      */
-    public static final Setting<SecureString> SECRET_KEY_SETTING = SecureSetting.secureString("personalize_intelligent_ranking.aws.secret_key", null);
+    public static final Setting<SecureString> SECRET_KEY_SETTING = SecureSetting.secureString("personalized_search_ranking.aws.secret_key", null);
 
     /**
      * The session token for connecting to Personalize.
      */
-    public static final Setting<SecureString> SESSION_TOKEN_SETTING = SecureSetting.secureString("personalize_intelligent_ranking.aws.session_token", null);
+    public static final Setting<SecureString> SESSION_TOKEN_SETTING = SecureSetting.secureString("personalized_search_ranking.aws.session_token", null);
 
     private final AWSCredentials credentials;
 
