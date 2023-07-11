@@ -159,7 +159,7 @@ public class KendraRankingResponseProcessor extends AbstractProcessor implements
                 Map<String, Processor.Factory<SearchResponseProcessor>> processorFactories,
                 String tag,
                 String description,
-                boolean IgnoreFailure,
+                boolean ignoreFailure,
                 Map<String, Object> config,
                 PipelineContext pipelineContext
         ) throws Exception {
@@ -173,7 +173,7 @@ public class KendraRankingResponseProcessor extends AbstractProcessor implements
             } else {
                 docLimit = Integer.parseInt(inputDocLimit);
             }
-            return new KendraRankingResponseProcessor(tag, description, IgnoreFailure, titleField, bodyField, docLimit, kendraClient);
+            return new KendraRankingResponseProcessor(tag, description, ignoreFailure, titleField, bodyField, docLimit, kendraClient);
         }
     }
 }
