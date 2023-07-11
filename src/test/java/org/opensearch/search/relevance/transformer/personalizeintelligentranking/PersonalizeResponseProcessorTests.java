@@ -55,7 +55,9 @@ public class PersonalizeResponseProcessorTests extends OpenSearchTestCase {
                 Collections.emptyMap(),
                 null,
                 null,
-                Collections.emptyMap()
+                false,
+                Collections.emptyMap(),
+                null
         ));
     }
 
@@ -72,7 +74,7 @@ public class PersonalizeResponseProcessorTests extends OpenSearchTestCase {
         configuration.put("aws_region", region);
 
         PersonalizeRankingResponseProcessor personalizeResponseProcessor =
-                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", configuration);
+                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", false, configuration, null);
 
         assertEquals(TYPE, personalizeResponseProcessor.getType());
         assertEquals("testTag", personalizeResponseProcessor.getTag());
@@ -94,7 +96,7 @@ public class PersonalizeResponseProcessorTests extends OpenSearchTestCase {
         configuration.put("aws_region", region);
 
         PersonalizeRankingResponseProcessor personalizeResponseProcessor =
-                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", configuration);
+                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", false, configuration, null);
         SearchRequest searchRequest = new SearchRequest();
         SearchHits hits = new SearchHits(new SearchHit[0], new TotalHits(0, TotalHits.Relation.EQUAL_TO), 0.0f);
         SearchResponseSections searchResponseSections = new SearchResponseSections(hits, null, null, false, false, null, 0);
@@ -118,7 +120,7 @@ public class PersonalizeResponseProcessorTests extends OpenSearchTestCase {
         configuration.put("aws_region", region);
 
         PersonalizeRankingResponseProcessor personalizeResponseProcessor =
-                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", configuration);
+                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", false, configuration, null);
         SearchRequest searchRequest = new SearchRequest();
         SearchHit[] searchHits = new SearchHit[10];
         for (int i = 0; i < searchHits.length; i++) {
@@ -147,7 +149,7 @@ public class PersonalizeResponseProcessorTests extends OpenSearchTestCase {
         configuration.put("aws_region", region);
 
         PersonalizeRankingResponseProcessor personalizeResponseProcessor =
-                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", configuration);
+                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", false, configuration, null);
 
         Map<String, Object> personalizeContext = new HashMap<>();
         personalizeContext.put("contextKey2", "contextValue2");
@@ -186,7 +188,7 @@ public class PersonalizeResponseProcessorTests extends OpenSearchTestCase {
         configuration.put("aws_region", region);
 
         PersonalizeRankingResponseProcessor personalizeResponseProcessor =
-                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", configuration);
+                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", false, configuration,null);
 
         Map<String, Object> personalizeContext = new HashMap<>();
         personalizeContext.put("contextKey2", 5);
