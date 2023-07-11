@@ -40,7 +40,7 @@ public class ValidationUtil {
         }
         // Validate IAM Role Arn for Personalize access
         String iamRoleArn = config.getIamRoleArn();
-        if(!(iamRoleArn != null || iamRoleArn.isBlank()) && !isValidCampaignOrRoleArn(iamRoleArn, "iam")) {
+        if(!(iamRoleArn == null || iamRoleArn.isBlank()) && !isValidCampaignOrRoleArn(iamRoleArn, "iam")) {
             throw ConfigurationUtils.newConfigurationException(processorType, processorTag, "iam_role_arn", "invalid format for Personalize iam role arn");
         }
         // Validate Personalize recipe
