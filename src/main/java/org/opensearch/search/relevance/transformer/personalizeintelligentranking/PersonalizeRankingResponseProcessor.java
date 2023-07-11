@@ -17,6 +17,7 @@ import org.opensearch.ingest.ConfigurationUtils;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
 import org.opensearch.search.internal.InternalSearchResponse;
+import org.opensearch.search.pipeline.AbstractProcessor;
 import org.opensearch.search.pipeline.Processor;
 import org.opensearch.search.pipeline.SearchResponseProcessor;
 import org.opensearch.search.profile.SearchProfileShardResults;
@@ -36,7 +37,7 @@ import java.util.function.BiFunction;
 /**
  * This is a {@link SearchResponseProcessor} that applies Personalized intelligent ranking
  */
-public class PersonalizeRankingResponseProcessor implements SearchResponseProcessor {
+public class PersonalizeRankingResponseProcessor extends AbstractProcessor implements SearchResponseProcessor {
 
     private static final Logger logger = LogManager.getLogger(PersonalizeRankingResponseProcessor.class);
 
@@ -51,14 +52,16 @@ public class PersonalizeRankingResponseProcessor implements SearchResponseProces
      *
      * @param tag           processor tag
      * @param description   processor description
+     * @param ignoreFailure processor ignoreFailure config
      * @param rankerConfig  personalize ranker config
      * @param client        personalize client
      */
     public PersonalizeRankingResponseProcessor(String tag,
                                                String description,
+                                               boolean ignoreFailure,
                                                PersonalizeIntelligentRankerConfiguration rankerConfig,
                                                PersonalizeClient client) {
-        super();
+        super(tag, description, ignoreFailure);
         this.tag = tag;
         this.description = description;
         this.rankerConfig = rankerConfig;
@@ -150,7 +153,7 @@ public class PersonalizeRankingResponseProcessor implements SearchResponseProces
         }
 
         @Override
-        public PersonalizeRankingResponseProcessor create(Map<String, Processor.Factory<SearchResponseProcessor>> processorFactories, String tag, String description, Map<String, Object> config) throws Exception {
+        public PersonalizeRankingResponseProcessor create(Map<String, Processor.Factory<SearchResponseProcessor>> processorFactories, String tag, String description, boolean ignoreFailure, Map<String, Object> config, PipelineContext pipelineContext) throws Exception {
             String personalizeCampaign = ConfigurationUtils.readStringProperty(TYPE, tag, config, CAMPAIGN_ARN_CONFIG_NAME);
             String iamRoleArn = ConfigurationUtils.readOptionalStringProperty(TYPE, tag, config, IAM_ROLE_ARN_CONFIG_NAME);
             String recipe = ConfigurationUtils.readStringProperty(TYPE, tag, config, RECIPE_CONFIG_NAME);
@@ -162,7 +165,7 @@ public class PersonalizeRankingResponseProcessor implements SearchResponseProces
                     new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdField, awsRegion, weight);
             AWSCredentialsProvider credentialsProvider = PersonalizeCredentialsProviderFactory.getCredentialsProvider(personalizeClientSettings, iamRoleArn, awsRegion);
             PersonalizeClient personalizeClient = clientBuilder.apply(credentialsProvider, awsRegion);
-            return new PersonalizeRankingResponseProcessor(tag, description, rankerConfig, personalizeClient);
+            return new PersonalizeRankingResponseProcessor(tag, description, ignoreFailure, rankerConfig, personalizeClient);
         }
     }
 }

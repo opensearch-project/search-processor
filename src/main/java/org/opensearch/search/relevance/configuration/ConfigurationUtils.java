@@ -27,6 +27,7 @@ public class ConfigurationUtils {
      * Get result transformer configurations from Search Request
      *
      * @param settings all index settings configured for this plugin
+     * @param resultTransformerMap map of transformed results
      * @return ordered and validated list of result transformers, empty list if not specified
      */
     public static List<ResultTransformerConfiguration> getResultTransformersFromIndexConfiguration(Settings settings,

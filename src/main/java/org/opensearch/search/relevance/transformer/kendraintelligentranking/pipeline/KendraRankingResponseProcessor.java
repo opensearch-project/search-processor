@@ -17,6 +17,7 @@ import org.opensearch.ingest.ConfigurationUtils;
 import org.opensearch.search.SearchHits;
 import org.opensearch.search.aggregations.InternalAggregations;
 import org.opensearch.search.internal.InternalSearchResponse;
+import org.opensearch.search.pipeline.AbstractProcessor;
 import org.opensearch.search.pipeline.Processor;
 import org.opensearch.search.pipeline.SearchResponseProcessor;
 import org.opensearch.search.profile.SearchProfileShardResults;
@@ -35,7 +36,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * This is a {@link SearchResponseProcessor} that applies kendra intelligence ranking
  */
-public class KendraRankingResponseProcessor implements SearchResponseProcessor {
+public class KendraRankingResponseProcessor extends AbstractProcessor implements SearchResponseProcessor {
     /**
      * key to reference this processor type from a search pipeline
      */
@@ -54,13 +55,14 @@ public class KendraRankingResponseProcessor implements SearchResponseProcessor {
      *
      * @param tag            processor tag
      * @param description    processor description
+     * @param ignoreFailure  processor ignoreFailure config
      * @param titleField     titleField applied to kendra re-ranking
      * @param bodyField      bodyField applied to kendra re-ranking
      * @param inputDocLimit  docLimit applied to kendra re-ranking
      * @param kendraClient   kendraClient to connect with kendra
      */
-    public KendraRankingResponseProcessor(String tag, String description, List<String> titleField, List<String> bodyField, Integer inputDocLimit, KendraHttpClient kendraClient) {
-        super();
+    public KendraRankingResponseProcessor(String tag, String description,  boolean ignoreFailure, List<String> titleField, List<String> bodyField, Integer inputDocLimit, KendraHttpClient kendraClient) {
+        super(tag, description, ignoreFailure);
         this.titleField = titleField;
         this.bodyField = bodyField;
         this.tag = tag;
@@ -98,6 +100,7 @@ public class KendraRankingResponseProcessor implements SearchResponseProcessor {
     public String getDescription() {
         return description;
     }
+
 
     /**
      * Transform the response hit and apply kendra re-ranking logic
@@ -156,7 +159,9 @@ public class KendraRankingResponseProcessor implements SearchResponseProcessor {
                 Map<String, Processor.Factory<SearchResponseProcessor>> processorFactories,
                 String tag,
                 String description,
-                Map<String, Object> config
+                boolean IgnoreFailure,
+                Map<String, Object> config,
+                PipelineContext pipelineContext
         ) throws Exception {
             List<String> titleField = Collections.singletonList(ConfigurationUtils.readOptionalStringProperty(TYPE, tag, config, "title_field"));
             List<String> bodyField = Collections.singletonList(ConfigurationUtils.readStringProperty(TYPE, tag, config, "body_field"));
@@ -168,7 +173,7 @@ public class KendraRankingResponseProcessor implements SearchResponseProcessor {
             } else {
                 docLimit = Integer.parseInt(inputDocLimit);
             }
-            return new KendraRankingResponseProcessor(tag, description, titleField, bodyField, docLimit, kendraClient);
+            return new KendraRankingResponseProcessor(tag, description, IgnoreFailure, titleField, bodyField, docLimit, kendraClient);
         }
     }
 }
