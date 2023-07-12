@@ -19,12 +19,4 @@ public interface PersonalizedRanker {
      * @return Re ranked search hits
      */
     SearchHits rerank(SearchHits hits, PersonalizeRequestParameters requestParameters);
-
-    /**
-     * Validate Personalize configuration for calling Personalize service
-     * @param requestParameters Request parameters for Personalize present in search request
-     * @return True if valid configuration present else false.
-     */
-    boolean isValidPersonalizeConfigPresent(PersonalizeRequestParameters requestParameters);
-
 }
