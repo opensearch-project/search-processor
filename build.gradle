@@ -143,11 +143,11 @@ sourceSets {
 
 
 jacocoTestReport {
+    dependsOn test
     reports {
         xml.required = true
         html.required = true
     }
-    dependsOn test
 }
 
 // TODO: Enable these checks
