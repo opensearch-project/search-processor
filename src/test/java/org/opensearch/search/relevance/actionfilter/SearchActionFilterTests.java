@@ -132,6 +132,7 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
         when(client.execute(eq(GetSettingsAction.INSTANCE), any(GetSettingsRequest.class)))
                 .thenReturn(mockGetSettingsFuture);
         return client;
+
     }
 
     /**
