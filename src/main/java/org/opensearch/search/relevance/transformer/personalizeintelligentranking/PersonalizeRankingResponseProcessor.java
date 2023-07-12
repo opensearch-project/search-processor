@@ -29,6 +29,7 @@ import org.opensearch.search.relevance.transformer.personalizeintelligentranking
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParameters;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker.PersonalizedRanker;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker.PersonalizedRankerFactory;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.utils.ValidationUtil;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -41,7 +42,7 @@ public class PersonalizeRankingResponseProcessor extends AbstractProcessor imple
 
     private static final Logger logger = LogManager.getLogger(PersonalizeRankingResponseProcessor.class);
 
-    public static final String TYPE = "personalize_ranking";
+    public static final String TYPE = "personalized_search_ranking";
     private final String tag;
     private final String description;
     private final PersonalizeClient personalizeClient;
@@ -163,6 +164,7 @@ public class PersonalizeRankingResponseProcessor extends AbstractProcessor imple
 
             PersonalizeIntelligentRankerConfiguration rankerConfig =
                     new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdField, awsRegion, weight);
+            ValidationUtil.validatePersonalizeIntelligentRankerConfiguration(rankerConfig, TYPE, tag);
             AWSCredentialsProvider credentialsProvider = PersonalizeCredentialsProviderFactory.getCredentialsProvider(personalizeClientSettings, iamRoleArn, awsRegion);
             PersonalizeClient personalizeClient = clientBuilder.apply(credentialsProvider, awsRegion);
             return new PersonalizeRankingResponseProcessor(tag, description, ignoreFailure, rankerConfig, personalizeClient);
