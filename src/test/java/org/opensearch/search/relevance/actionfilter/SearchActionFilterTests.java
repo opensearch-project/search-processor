@@ -26,6 +26,7 @@ import org.opensearch.action.search.ShardSearchFailure;
 import org.opensearch.action.support.ActionFilterChain;
 import org.opensearch.client.Client;
 import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.common.collect.ImmutableOpenMap;
 import org.opensearch.common.document.DocumentField;
 import org.opensearch.common.io.stream.StreamInput;
 import org.opensearch.common.io.stream.StreamOutput;
@@ -122,12 +123,16 @@ public class SearchActionFilterTests extends OpenSearchTestCase {
             settingsBuilder.put(settingsEntry);
         }
         Settings settingsObj = settingsBuilder.build();
-        Map<String, Settings> indexSettingsMap = Map.of(indexName, settingsObj);
-        GetSettingsResponse getSettingsResponse = new GetSettingsResponse(indexSettingsMap, Collections.emptyMap());
+        ImmutableOpenMap<String, Settings> indexSettingsMap = ImmutableOpenMap.<String, Settings>builder()
+                .fPut(indexName, settingsObj)
+                .build();
+        ImmutableOpenMap<String, Settings> emptyMap = ImmutableOpenMap.<String, Settings>builder().build();
+        GetSettingsResponse getSettingsResponse = new GetSettingsResponse(indexSettingsMap, emptyMap);
         when(mockGetSettingsFuture.actionGet()).thenReturn(getSettingsResponse);
         when(client.execute(eq(GetSettingsAction.INSTANCE), any(GetSettingsRequest.class)))
                 .thenReturn(mockGetSettingsFuture);
         return client;
+
     }
 
     /**
