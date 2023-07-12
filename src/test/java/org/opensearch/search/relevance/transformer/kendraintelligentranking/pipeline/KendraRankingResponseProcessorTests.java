@@ -66,7 +66,9 @@ public class KendraRankingResponseProcessorTests extends KendraIntelligentClient
                 Collections.emptyMap(),
                 null,
                 null,
-                Collections.emptyMap()
+                false,
+                Collections.emptyMap(),
+                null
         ));
 
         //test create with all fields
@@ -76,7 +78,7 @@ public class KendraRankingResponseProcessorTests extends KendraIntelligentClient
         configuration.put("title_field","field");
         configuration.put("body_field","body");
         configuration.put("doc_limit","500");
-        KendraRankingResponseProcessor processorWithAllFields = factory.create(Collections.emptyMap(),"tmp0","testingAllFields", configuration);
+        KendraRankingResponseProcessor processorWithAllFields = factory.create(Collections.emptyMap(),"tmp0","testingAllFields", false, configuration,null);
         assertEquals(TYPE, processorWithAllFields.getType());
         assertEquals("tmp0", processorWithAllFields.getTag());
         assertEquals("testingAllFields", processorWithAllFields.getDescription());
@@ -84,7 +86,7 @@ public class KendraRankingResponseProcessorTests extends KendraIntelligentClient
         //test create with required field
         Map<String,Object> shortConfiguration = new HashMap<>();
         shortConfiguration.put("body_field","body");
-        KendraRankingResponseProcessor processorWithOneFields = factory.create(Collections.emptyMap(),"tmp1","testingBodyField", shortConfiguration);
+        KendraRankingResponseProcessor processorWithOneFields = factory.create(Collections.emptyMap(),"tmp1","testingBodyField", false, shortConfiguration, null);
         assertEquals(TYPE, processorWithOneFields.getType());
         assertEquals("tmp1", processorWithOneFields.getTag());
         assertEquals("testingBodyField", processorWithOneFields.getDescription());
@@ -93,7 +95,7 @@ public class KendraRankingResponseProcessorTests extends KendraIntelligentClient
         Map<String,Object> nullDocLimitConfiguration = new HashMap<>();
         nullDocLimitConfiguration.put("body_field","body");
         nullDocLimitConfiguration.put("doc_limit",null);
-        KendraRankingResponseProcessor processorWithNullDocLimit = factory.create(Collections.emptyMap(),"tmp2","testingNullDocLimit", nullDocLimitConfiguration);
+        KendraRankingResponseProcessor processorWithNullDocLimit = factory.create(Collections.emptyMap(),"tmp2","testingNullDocLimit", false, nullDocLimitConfiguration, null );
         assertEquals(TYPE, processorWithNullDocLimit.getType());
         assertEquals("tmp2", processorWithNullDocLimit.getTag());
         assertEquals("testingNullDocLimit", processorWithNullDocLimit.getDescription());
@@ -102,7 +104,7 @@ public class KendraRankingResponseProcessorTests extends KendraIntelligentClient
         Map<String,Object> nullTitleConfiguration = new HashMap<>();
         nullTitleConfiguration.put("body_field","body");
         nullTitleConfiguration.put("title_field",null);
-        KendraRankingResponseProcessor processorWithNullTitleField = factory.create(Collections.emptyMap(),"tmp3","testingNullTitleField", nullTitleConfiguration);
+        KendraRankingResponseProcessor processorWithNullTitleField = factory.create(Collections.emptyMap(),"tmp3","testingNullTitleField", false, nullTitleConfiguration, null);
         assertEquals(TYPE, processorWithNullTitleField.getType());
         assertEquals("tmp3", processorWithNullTitleField.getTag());
         assertEquals("testingNullTitleField", processorWithNullTitleField.getDescription());
@@ -116,18 +118,18 @@ public class KendraRankingResponseProcessorTests extends KendraIntelligentClient
         bodyField.add("body");
 
         //test response with titleField, bodyField and docLimit
-        KendraRankingResponseProcessor processorWtOptionalConfig = new KendraRankingResponseProcessor(null,null,titleField,bodyField,500,kendraClient);
+        KendraRankingResponseProcessor processorWtOptionalConfig = new KendraRankingResponseProcessor(null,null,false, titleField,bodyField,500,kendraClient);
         int size = 5;
         SearchResponse reRankedResponse0 = processorWtOptionalConfig.processResponse(createRequest(),createResponse(size));
         assertEquals(size,reRankedResponse0.getHits().getHits().length);
 
         //test response with null doc limit
-        KendraRankingResponseProcessor processorWtTwoConfig = new KendraRankingResponseProcessor(null,null,titleField,bodyField,null,kendraClient);
+        KendraRankingResponseProcessor processorWtTwoConfig = new KendraRankingResponseProcessor(null,null,false, titleField,bodyField,null,kendraClient);
         SearchResponse reRankedResponse1 = processorWtTwoConfig.processResponse(createRequest(),createResponse(size));
         assertEquals(size,reRankedResponse1.getHits().getHits().length);
 
         //test response with null doc limit and null title field
-        KendraRankingResponseProcessor processorWtOneConfig = new KendraRankingResponseProcessor(null,null,null,bodyField,null,kendraClient);
+        KendraRankingResponseProcessor processorWtOneConfig = new KendraRankingResponseProcessor(null,null,false,null,bodyField,null,kendraClient);
         SearchResponse reRankedResponse2 = processorWtOneConfig.processResponse(createRequest(),createResponse(size));
         assertEquals(size,reRankedResponse2.getHits().getHits().length);
 

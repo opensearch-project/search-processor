@@ -22,28 +22,30 @@ import static org.opensearch.search.relevance.configuration.Constants.RESULT_TRA
 
 public class ConfigurationUtils {
 
-  /**
-  * Get result transformer configurations from Search Request
-  * @param settings all index settings configured for this plugin
-  * @return ordered and validated list of result transformers, empty list if not specified
-  */
-  public static List<ResultTransformerConfiguration> getResultTransformersFromIndexConfiguration(Settings settings,
-                                                                                                 Map<String, ResultTransformer> resultTransformerMap) {
-    List<ResultTransformerConfiguration> indexLevelConfigs = new ArrayList<>();
+    /**
+     * Get result transformer configurations from Search Request
+     *
+     * @param settings all index settings configured for this plugin
+     * @param resultTransformerMap map of transformed results
+     * @return ordered and validated list of result transformers, empty list if not specified
+     */
+    public static List<ResultTransformerConfiguration> getResultTransformersFromIndexConfiguration(Settings settings,
+                                                                                                   Map<String, ResultTransformer> resultTransformerMap) {
+      List<ResultTransformerConfiguration> indexLevelConfigs = new ArrayList<>();
 
-    if (settings != null) {
-      if (settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX) != null) {
-        for (Map.Entry<String, Settings> transformerSettings : settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX).entrySet()) {
-          if (resultTransformerMap.containsKey(transformerSettings.getKey())) {
-            ResultTransformer transformer = resultTransformerMap.get(transformerSettings.getKey());
-            indexLevelConfigs.add(transformer.getConfigurationFactory().configure(transformerSettings.getValue()));
+      if (settings != null) {
+        if (settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX) != null) {
+          for (Map.Entry<String, Settings> transformerSettings : settings.getGroups(RESULT_TRANSFORMER_SETTING_PREFIX).entrySet()) {
+            if (resultTransformerMap.containsKey(transformerSettings.getKey())) {
+              ResultTransformer transformer = resultTransformerMap.get(transformerSettings.getKey());
+              indexLevelConfigs.add(transformer.getConfigurationFactory().configure(transformerSettings.getValue()));
+            }
           }
         }
       }
-    }
 
-    return reorderAndValidateConfigs(indexLevelConfigs);
-  }
+      return reorderAndValidateConfigs(indexLevelConfigs);
+     }
 
   /**
    * Get result transformer configurations from Search Request
