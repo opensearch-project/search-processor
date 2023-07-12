@@ -6,3 +6,12 @@
 
   - match:
       $body: /^opensearch-search-processor-\d+.\d+.\d+.\d+\n$/
+
+  - do:
+      indices.create:
+        index:  test
+
+  - do:
+      search:
+        index: test
+        body: { }

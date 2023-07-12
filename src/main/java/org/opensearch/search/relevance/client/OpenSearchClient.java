@@ -7,6 +7,7 @@
  */
 package org.opensearch.search.relevance.client;
 
+import org.opensearch.action.ActionListener;
 import org.opensearch.action.admin.indices.settings.get.GetSettingsAction;
 import org.opensearch.action.admin.indices.settings.get.GetSettingsRequest;
 import org.opensearch.action.admin.indices.settings.get.GetSettingsResponse;
@@ -20,13 +21,13 @@ public class OpenSearchClient {
     this.client = client;
   }
 
-  public Settings getIndexSettings(String indexName, String[] settingNames) {
+  public void getIndexSettings(String indexName, String[] settingNames, ActionListener<Settings> settingsListener) {
     GetSettingsRequest getSettingsRequest = new GetSettingsRequest()
         .indices(indexName);
     if (settingNames != null && settingNames.length > 0) {
       getSettingsRequest.names(settingNames);
     }
-    GetSettingsResponse getSettingsResponse = client.execute(GetSettingsAction.INSTANCE, getSettingsRequest).actionGet();
-    return getSettingsResponse.getIndexToSettings().get(indexName);
+    ActionListener<GetSettingsResponse> responseListener = ActionListener.map(settingsListener, r -> r.getIndexToSettings().get(indexName));
+    client.execute(GetSettingsAction.INSTANCE, getSettingsRequest, responseListener);
   }
 }
