@@ -9,7 +9,7 @@ package org.opensearch.search.relevance.transformer.kendraintelligentranking.mod
 
 import java.io.IOException;
 import org.opensearch.OpenSearchException;
-import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamInput;
 
 public class KendraIntelligentRankingException extends OpenSearchException {
   public KendraIntelligentRankingException(StreamInput in) throws IOException {
