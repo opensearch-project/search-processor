@@ -7,7 +7,7 @@
  */
 package org.opensearch.search.relevance.configuration;
 
-import org.opensearch.common.io.stream.StreamInput;
+import org.opensearch.core.common.io.stream.StreamInput;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.core.xcontent.XContentParser;
 
@@ -33,7 +33,7 @@ public interface ResultTransformerConfigurationFactory {
 
     /**
      * Build configuration from a serialized stream.
-     * @param streamInput a {@link org.opensearch.common.io.stream.Writeable} serialized representation of transformer
+     * @param streamInput a {@link org.opensearch.core.common.io.stream.Writeable} serialized representation of transformer
      *                    configuration.
      * @return configuration the deserialized transformer configuration.
      */

@@ -9,7 +9,7 @@ package org.opensearch.search.relevance.transformer.kendraintelligentranking;
 
 import org.apache.lucene.search.TotalHits;
 import org.opensearch.action.search.SearchRequest;
-import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.Settings;
 import org.opensearch.common.xcontent.json.JsonXContent;
