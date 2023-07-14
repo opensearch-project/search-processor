@@ -10,7 +10,7 @@ package org.opensearch.search.relevance.configuration;
 import static org.opensearch.search.relevance.configuration.Constants.ORDER;
 import static org.opensearch.search.relevance.configuration.Constants.PROPERTIES;
 
-import org.opensearch.common.io.stream.Writeable;
+import org.opensearch.core.common.io.stream.Writeable;
 import org.opensearch.core.ParseField;
 import org.opensearch.core.xcontent.ToXContentObject;
 
