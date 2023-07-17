@@ -9,11 +9,17 @@ package org.opensearch.search.relevance.transformer.personalizeintelligentrankin
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSSessionCredentials;
+import org.opensearch.common.settings.SecureSetting;
+import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.SettingsException;
+import org.opensearch.common.settings.SecureString;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.utils.PersonalizeClientSettingsTestUtil;
 import org.opensearch.test.OpenSearchTestCase;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 
 import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.utils.PersonalizeClientSettingsTestUtil.ACCESS_KEY;
 import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.utils.PersonalizeClientSettingsTestUtil.SECRET_KEY;
@@ -27,6 +33,17 @@ public class PersonalizeClientSettingsTests extends OpenSearchTestCase {
         assertEquals(ACCESS_KEY, credentials.getAWSAccessKeyId());
         assertEquals(SECRET_KEY, credentials.getAWSSecretKey());
         assertFalse(credentials instanceof AWSSessionCredentials);
+    }
+
+    public void testWithGetAllSetting() throws IOException {
+        PersonalizeClientSettings clientSettings = PersonalizeClientSettingsTestUtil.buildClientSettings(true, true, true);
+        assertEquals(clientSettings.getAllSettings().size(), 3);
+        Setting<SecureString> ACCESS_KEY_SETTING = SecureSetting.secureString("personalized_search_ranking.aws.access_key", null);
+        Setting<SecureString> SECRET_KEY_SETTING = SecureSetting.secureString("personalized_search_ranking.aws.secret_key", null);
+        Setting<SecureString> SESSION_TOKEN_SETTING = SecureSetting.secureString("personalized_search_ranking.aws.session_token", null);
+        assertEquals(ACCESS_KEY_SETTING, clientSettings.getAllSettings().toArray()[0]);
+        assertEquals(SECRET_KEY_SETTING, clientSettings.getAllSettings().toArray()[1]);
+        assertEquals(SESSION_TOKEN_SETTING, clientSettings.getAllSettings().toArray()[2]);
     }
 
     public void testWithSessionCredentials() throws IOException {
