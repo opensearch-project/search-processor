@@ -36,8 +36,10 @@ import org.opensearch.search.relevance.transformer.kendraintelligentranking.conf
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.configuration.KendraIntelligentRankingConfigurationFactory;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.pipeline.KendraRankingResponseProcessor;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.PersonalizeRankingResponseProcessor;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.client.PersonalizeClient;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.client.PersonalizeClientSettings;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParametersExtBuilder;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker.PersonalizedRanker;
 import org.opensearch.threadpool.ThreadPool;
 import org.opensearch.watcher.ResourceWatcherService;
 
@@ -55,6 +57,7 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
     private KendraHttpClient kendraClient;
     private KendraIntelligentRanker kendraIntelligentRanker;
     private KendraClientSettings kendraClientSettings;
+    private PersonalizeClientSettings personalizeClientSettings;
 
     private Collection<ResultTransformer> getAllResultTransformers() {
         // Initialize and add other transformers here
@@ -75,6 +78,7 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
         // NOTE: cannot use kendraIntelligentRanker.getTransformerSettings because the object is not yet created
         List<Setting<?>> allTransformerSettings = new ArrayList<>();
         allTransformerSettings.addAll(KendraIntelligentRankerSettings.getAllSettings());
+        allTransformerSettings.addAll(PersonalizeClientSettings.getAllSettings());
         // Add settings for other transformers here
         return allTransformerSettings;
     }
@@ -97,6 +101,7 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
         this.kendraClientSettings = KendraClientSettings.getClientSettings(environment.settings());
         this.kendraClient = new KendraHttpClient(this.kendraClientSettings);
         this.kendraIntelligentRanker = new KendraIntelligentRanker(this.kendraClient);
+        this.personalizeClientSettings = PersonalizeClientSettings.getClientSettings(environment.settings());
 
         return Arrays.asList(
                 this.openSearchClient,
@@ -120,7 +125,7 @@ public class SearchRelevancePlugin extends Plugin implements ActionPlugin, Searc
 
     @Override
     public Map<String, Processor.Factory<SearchResponseProcessor>> getResponseProcessors(Parameters parameters) {
-        return Map.of(PersonalizeRankingResponseProcessor.TYPE, new PersonalizeRankingResponseProcessor.Factory(PersonalizeClientSettings.getClientSettings(parameters.env.settings())),
+        return Map.of(PersonalizeRankingResponseProcessor.TYPE, new PersonalizeRankingResponseProcessor.Factory(this.personalizeClientSettings ),
                 KendraRankingResponseProcessor.TYPE, new KendraRankingResponseProcessor.Factory(this.kendraClientSettings));
     }
 }
