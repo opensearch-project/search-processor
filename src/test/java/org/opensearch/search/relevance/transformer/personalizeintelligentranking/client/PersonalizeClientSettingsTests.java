@@ -12,7 +12,7 @@ import com.amazonaws.auth.AWSSessionCredentials;
 import org.opensearch.common.settings.SecureSetting;
 import org.opensearch.common.settings.Setting;
 import org.opensearch.common.settings.SettingsException;
-import org.opensearch.core.common.settings.SecureString;
+import org.opensearch.common.settings.SecureString;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.utils.PersonalizeClientSettingsTestUtil;
 import org.opensearch.test.OpenSearchTestCase;
 
