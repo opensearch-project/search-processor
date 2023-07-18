@@ -33,8 +33,9 @@ public class PersonalizeClient implements Closeable {
      * @param awsRegion AWS region where Amazon Personalize campaign is hosted
      */
     public PersonalizeClient(AWSCredentialsProvider credentialsProvider, String awsRegion) {
-        ClientConfiguration clientConfiguration = new ClientConfiguration()
-                .withUserAgentPrefix(USER_AGENT_PREFIX);
+        ClientConfiguration clientConfiguration = AccessController.doPrivileged(
+                (PrivilegedAction<ClientConfiguration>) () -> new ClientConfiguration()
+                .withUserAgentPrefix(USER_AGENT_PREFIX));
         personalizeRuntime = AccessController.doPrivileged(
                 (PrivilegedAction<AmazonPersonalizeRuntime>) () -> AmazonPersonalizeRuntimeClientBuilder.standard()
                         .withCredentials(credentialsProvider)
