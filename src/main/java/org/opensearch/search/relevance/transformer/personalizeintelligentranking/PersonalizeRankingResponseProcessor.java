@@ -154,7 +154,7 @@ public class PersonalizeRankingResponseProcessor extends AbstractProcessor imple
         }
 
         @Override
-        public PersonalizeRankingResponseProcessor create(Map<String, Processor.Factory<SearchResponseProcessor>> processorFactories, String tag, String description, boolean ignoreFailure, Map<String, Object> config, PipelineContext pipelineContext) throws Exception {
+        public PersonalizeRankingResponseProcessor create(Map<String, Processor.Factory<SearchResponseProcessor>> processorFactories, String tag, String description, boolean ignoreFailure, Map<String, Object> config, PipelineContext pipelineContext) {
             String personalizeCampaign = ConfigurationUtils.readStringProperty(TYPE, tag, config, CAMPAIGN_ARN_CONFIG_NAME);
             String iamRoleArn = ConfigurationUtils.readOptionalStringProperty(TYPE, tag, config, IAM_ROLE_ARN_CONFIG_NAME);
             String recipe = ConfigurationUtils.readStringProperty(TYPE, tag, config, RECIPE_CONFIG_NAME);
@@ -165,9 +165,25 @@ public class PersonalizeRankingResponseProcessor extends AbstractProcessor imple
             PersonalizeIntelligentRankerConfiguration rankerConfig =
                     new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdField, awsRegion, weight);
             ValidationUtil.validatePersonalizeIntelligentRankerConfiguration(rankerConfig, TYPE, tag);
-            AWSCredentialsProvider credentialsProvider = PersonalizeCredentialsProviderFactory.getCredentialsProvider(personalizeClientSettings, iamRoleArn, awsRegion);
-            PersonalizeClient personalizeClient = clientBuilder.apply(credentialsProvider, awsRegion);
+
+            final PersonalizeClient personalizeClient;
+            switch (pipelineContext.getPipelineSource()) {
+                case SEARCH_REQUEST:
+                    throw new IllegalStateException(TYPE + " processor may not be instantiated as part of a search request. Create a named search pipeline instead.");
+                case UPDATE_PIPELINE:
+                    AWSCredentialsProvider credentialsProvider = PersonalizeCredentialsProviderFactory.getCredentialsProvider(personalizeClientSettings, iamRoleArn, awsRegion);
+                    personalizeClient = clientBuilder.apply(credentialsProvider, awsRegion);
+                    break;
+                case VALIDATE_PIPELINE:
+                default:
+                    personalizeClient = null; // Do not instantiate client on validation
+            }
             return new PersonalizeRankingResponseProcessor(tag, description, ignoreFailure, rankerConfig, personalizeClient);
         }
+    }
+
+    PersonalizeClient getPersonalizeClient() {
+        // Visible for testing
+        return personalizeClient;
     }
 }
