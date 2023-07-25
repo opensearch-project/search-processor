@@ -9,7 +9,7 @@ package org.opensearch.search.relevance.transformer.personalizeintelligentrankin
 
 import org.apache.lucene.search.TotalHits;
 import org.opensearch.action.search.SearchRequest;
-import org.opensearch.common.bytes.BytesReference;
+import org.opensearch.core.common.bytes.BytesReference;
 import org.opensearch.common.xcontent.json.JsonXContent;
 import org.opensearch.core.xcontent.XContentBuilder;
 import org.opensearch.search.SearchHit;
