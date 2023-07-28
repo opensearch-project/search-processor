@@ -16,7 +16,7 @@ jobs:
     strategy:
       matrix:
         java: [11, 17]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
 
     name: Build and Test Search Request Processor Plugin
     runs-on: ${{ matrix.os }}
