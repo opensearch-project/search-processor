@@ -8,3 +8,5 @@
  */
 
 rootProject.name = 'search-processor'
+include 'amazon-kendra-intelligent-ranking'
+include 'amazon-personalize-ranking'
