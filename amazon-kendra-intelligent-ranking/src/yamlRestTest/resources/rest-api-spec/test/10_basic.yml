@@ -1,0 +1,17 @@
+"Test that the plugin is loaded in OpenSearch":
+  - do:
+      cat.plugins:
+        local: true
+        h: component
+
+  - match:
+      $body: /^opensearch-amazon-kendra-intelligent-ranking-\d+.\d+.\d+.\d+\n$/
+
+  - do:
+      indices.create:
+        index:  test
+
+  - do:
+      search:
+        index: test
+        body: { }
