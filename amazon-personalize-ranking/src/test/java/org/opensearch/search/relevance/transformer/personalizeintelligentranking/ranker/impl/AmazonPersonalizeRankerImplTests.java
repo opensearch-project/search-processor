@@ -8,6 +8,9 @@
 
 package org.opensearch.search.relevance.transformer.personalizeintelligentranking.ranker.impl;
 
+import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.personalizeruntime.model.InvalidInputException;
+import org.junit.Assert;
 import org.mockito.Mockito;
 import org.opensearch.OpenSearchParseException;
 import org.opensearch.search.SearchHit;
@@ -39,6 +42,8 @@ public class AmazonPersonalizeRankerImplTests extends OpenSearchTestCase {
     private String region = "us-west-2";
     private double weight = 0.25;
     private int numOfHits = 10;
+    private static final String ACCESS_DENIED_EXCEPTION_ERROR_CODE = "AccessDeniedException";
+
 
     public void testReRank() throws IOException {
         PersonalizeIntelligentRankerConfiguration rankerConfig =
@@ -302,5 +307,26 @@ public class AmazonPersonalizeRankerImplTests extends OpenSearchTestCase {
 
         assertNotEquals(rerankedDocumentIdsWhenWeightIsOne, rerankedDocumentIds);
         assertNotEquals(rerankedDocumentIdsWhenWeightIsZero, rerankedDocumentIds);
+    }
+
+    public void testReRankWithaccessDeniedException() throws IOException {
+
+        PersonalizeIntelligentRankerConfiguration rankerConfig =
+                new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdField, region, weight);
+        PersonalizeClient client = Mockito.mock(PersonalizeClient.class);
+        Mockito.when(client.getPersonalizedRanking(any())).thenThrow(buildErrorMsg(ACCESS_DENIED_EXCEPTION_ERROR_CODE));
+
+        PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters();
+        requestParameters.setUserId("28");
+        SearchHits responseHits = SearchTestUtil.getSampleSearchHitsForPersonalize(numOfHits);
+        AmazonPersonalizedRankerImpl ranker = new AmazonPersonalizedRankerImpl(rankerConfig, client);
+        Assert.assertThrows(InvalidInputException.class, () -> ranker.rerank(responseHits, requestParameters));
+    }
+
+
+    private AmazonServiceException buildErrorMsg(String errorMessage) {
+        AmazonServiceException amazonServiceException = new AmazonServiceException("Error");
+        amazonServiceException.setErrorCode(errorMessage);
+        return amazonServiceException;
     }
 }

@@ -7,8 +7,10 @@
  */
 package org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker.impl;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingRequest;
 import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingResult;
+import com.amazonaws.services.personalizeruntime.model.InvalidInputException;
 import com.amazonaws.services.personalizeruntime.model.PredictedItem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -36,6 +38,9 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
     private static final Logger logger = LogManager.getLogger(AmazonPersonalizedRankerImpl.class);
     private final PersonalizeIntelligentRankerConfiguration rankerConfig;
     private final PersonalizeClient personalizeClient;
+    private static final String INSUFFCIENT_PUT_METRIC_PERMISSION_FORMAT =
+            "Insufficient privileges for calling personalize campaign. Please ensure that the supplied role is configured correctly.";
+    private static final String ACCESS_DENIED_EXCEPTION_ERROR_CODE = "AccessDeniedException";
     public AmazonPersonalizedRankerImpl(PersonalizeIntelligentRankerConfiguration config,
                                         PersonalizeClient client) {
         this.rankerConfig = config;
@@ -96,7 +101,14 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
 
             SearchHits personalizedHits = combineScores(hits, result);
             return personalizedHits;
-        } catch (Exception ex) {
+        } catch (AmazonServiceException e) {
+            logger.error("Exception while calling personalize campaign: {}", e.getMessage());
+            if (ACCESS_DENIED_EXCEPTION_ERROR_CODE.equals(e.getErrorCode())) {
+                throw new InvalidInputException(INSUFFCIENT_PUT_METRIC_PERMISSION_FORMAT);
+            }
+            throw e;
+        }
+        catch (Exception ex) {
             logger.error("Failed to re rank with Personalize.", ex);
             throw ex;
         }
