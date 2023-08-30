@@ -41,8 +41,6 @@ public class AmazonPersonalizeRankerImplTests extends OpenSearchTestCase {
     private String region = "us-west-2";
     private double weight = 0.25;
     private int numOfHits = 10;
-    private static final String ACCESS_DENIED_EXCEPTION_ERROR_CODE = "AccessDeniedException";
-
 
     public void testReRank() throws IOException {
         PersonalizeIntelligentRankerConfiguration rankerConfig =
@@ -308,12 +306,12 @@ public class AmazonPersonalizeRankerImplTests extends OpenSearchTestCase {
         assertNotEquals(rerankedDocumentIdsWhenWeightIsZero, rerankedDocumentIds);
     }
 
-    public void testReRankWithaccessDeniedException() throws IOException {
+    public void testReRankWithaccessDeniedExceptionWithStatusCode400() throws IOException {
 
         PersonalizeIntelligentRankerConfiguration rankerConfig =
                 new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdField, region, weight);
         PersonalizeClient client = Mockito.mock(PersonalizeClient.class);
-        Mockito.when(client.getPersonalizedRanking(any())).thenThrow(buildErrorMsg(ACCESS_DENIED_EXCEPTION_ERROR_CODE));
+        Mockito.when(client.getPersonalizedRanking(any())).thenThrow(buildErrorWithStatusCode(400));
 
         PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters();
         requestParameters.setUserId("28");
@@ -322,10 +320,24 @@ public class AmazonPersonalizeRankerImplTests extends OpenSearchTestCase {
         Assert.assertThrows(IllegalArgumentException.class, () -> ranker.rerank(responseHits, requestParameters));
     }
 
+    public void testReRankWithaccessDeniedExceptionWithStatusCode500() throws IOException {
 
-    private AmazonServiceException buildErrorMsg(String errorMessage) {
+        PersonalizeIntelligentRankerConfiguration rankerConfig =
+                new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdField, region, weight);
+        PersonalizeClient client = Mockito.mock(PersonalizeClient.class);
+        Mockito.when(client.getPersonalizedRanking(any())).thenThrow(buildErrorWithStatusCode(500));
+
+        PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters();
+        requestParameters.setUserId("28");
+        SearchHits responseHits = SearchTestUtil.getSampleSearchHitsForPersonalize(numOfHits);
+        AmazonPersonalizedRankerImpl ranker = new AmazonPersonalizedRankerImpl(rankerConfig, client);
+        Assert.assertThrows(AmazonServiceException.class, () -> ranker.rerank(responseHits, requestParameters));
+    }
+
+
+    private AmazonServiceException buildErrorWithStatusCode(int statusCode) {
         AmazonServiceException amazonServiceException = new AmazonServiceException("Error");
-        amazonServiceException.setErrorCode(errorMessage);
+        amazonServiceException.setStatusCode(statusCode);
         return amazonServiceException;
     }
 }

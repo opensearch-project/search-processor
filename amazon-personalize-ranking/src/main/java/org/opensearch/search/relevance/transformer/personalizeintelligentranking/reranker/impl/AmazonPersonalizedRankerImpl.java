@@ -38,8 +38,7 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
     private final PersonalizeIntelligentRankerConfiguration rankerConfig;
     private final PersonalizeClient personalizeClient;
     private static final String INSUFFCIENT_PERMISSION_ERROR_MESSAGE =
-            "Insufficient privileges for calling personalize campaign. Please ensure that the supplied role is configured correctly.";
-    private static final String ACCESS_DENIED_EXCEPTION_ERROR_CODE = "AccessDeniedException";
+            "Insufficient privileges for calling personalize service. Please ensure that the supplied role is configured correctly.";
     public AmazonPersonalizedRankerImpl(PersonalizeIntelligentRankerConfiguration config,
                                         PersonalizeClient client) {
         this.rankerConfig = config;
@@ -102,7 +101,8 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
             return personalizedHits;
         } catch (AmazonServiceException e) {
             logger.error("Exception while calling personalize campaign: {}", e.getMessage());
-            if (ACCESS_DENIED_EXCEPTION_ERROR_CODE.equals(e.getErrorCode())) {
+            int statusCode = e.getStatusCode();
+            if (statusCode >= 400 && statusCode < 500) {
                 throw new IllegalArgumentException(INSUFFCIENT_PERMISSION_ERROR_MESSAGE);
             }
             throw e;
