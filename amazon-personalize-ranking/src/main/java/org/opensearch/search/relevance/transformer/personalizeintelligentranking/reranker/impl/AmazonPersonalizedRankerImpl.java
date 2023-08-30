@@ -21,6 +21,7 @@ import org.opensearch.search.relevance.transformer.personalizeintelligentranking
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.PersonalizeIntelligentRankerConfiguration;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParameters;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker.PersonalizedRanker;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.utils.ValidationUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,8 +38,7 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
     private static final Logger logger = LogManager.getLogger(AmazonPersonalizedRankerImpl.class);
     private final PersonalizeIntelligentRankerConfiguration rankerConfig;
     private final PersonalizeClient personalizeClient;
-    private static final String INSUFFCIENT_PERMISSION_ERROR_MESSAGE =
-            "Insufficient privileges for calling personalize service. Please ensure that the supplied role is configured correctly.";
+
     public AmazonPersonalizedRankerImpl(PersonalizeIntelligentRankerConfiguration config,
                                         PersonalizeClient client) {
         this.rankerConfig = config;
@@ -102,8 +102,8 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
         } catch (AmazonServiceException e) {
             logger.error("Exception while calling personalize campaign: {}", e.getMessage());
             int statusCode = e.getStatusCode();
-            if (statusCode >= 400 && statusCode < 500) {
-                throw new IllegalArgumentException(INSUFFCIENT_PERMISSION_ERROR_MESSAGE);
+            if (ValidationUtil.is4xxError(statusCode)) {
+                throw new IllegalArgumentException(e);
             }
             throw e;
         }

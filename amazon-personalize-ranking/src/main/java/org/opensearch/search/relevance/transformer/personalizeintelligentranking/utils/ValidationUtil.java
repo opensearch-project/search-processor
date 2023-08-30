@@ -57,4 +57,11 @@ public class ValidationUtil {
             return false;
         }
     }
+
+    public static boolean is4xxError(int statusCode){
+        if (statusCode >= 400 && statusCode < 500) {
+            return true;
+        }
+        return false;
+    }
 }
