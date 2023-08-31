@@ -2,7 +2,7 @@
 [![codecov](https://codecov.io/gh/opensearch-project/search-processor/branch/main/graph/badge.svg?token=PYQO2GW39S)](https://codecov.io/gh/opensearch-project/search-processor)
 ![PRs welcome!](https://img.shields.io/badge/PRs-welcome!-success)
 
-# Search Query & Request Transformers
+# Search Rerankers: AWS Kendra & AWS Personalize
 - [Welcome!](#welcome)
 - [Project Resources](#project-resources)
 - [Code of Conduct](#code-of-conduct)
@@ -10,21 +10,21 @@
 - [Copyright](#copyright)
 
 ## Welcome!
-This repository is the home of an evolving project that aims to create a pipeline of transformers to preprocess queries before search and post-process results after search. The first component here is a plugin to re-rank search results before returning them to the client inline. In the coming year, we will add hooks to configure other re-rankers and allow users to add their own components to the pipeline. Logging will also be a critical part of the pipeline in two ways: 
-1. Logging information about the search experience (e.g. query, search results returned from the index, search results returned to the OpenSearch client) 
-1. Logging debug information about the transformers
+This repository hosts the code for two self-install re-rankers that integrate into [Search Pipelines](https://opensearch.org/docs/latest/search-plugins/search-pipelines/index/). User documentation for the Personalize Reranker is [here](https://opensearch.org/docs/latest/search-plugins/search-pipelines/personalize-search-ranking/). For Kendra, it is [here](https://opensearch.org/docs/latest/search-plugins/search-relevance/index/#reranking-results-with-kendra-intelligent-ranking-for-opensearch). 
 
-We will be publishing an RFC soon to give more detail and have a deeper conversation, but for now take a look at the code, open issues, comment, etc.
+# Search Processors: Where Do They Go?
+The current guideline for developing processors is that if you are developing a processor that would introduce new dependencies in [OpenSearch Core](https://github.com/opensearch-project/OpenSearch) (e.g. new libraries, makes a network connection outside of OpenSearch), it should be in a separate repository. Please consider creating it in a standalone repository since each processor should be thought of like a \*NIX command with input and output connected by pipes (i.e. a Search Pipeline). Each processor should do one thing and do it well. Otherwise, it could go into the OpenSearch repository under [org.opensearch.search.pipeline.common](https://github.com/opensearch-project/OpenSearch/tree/a08d588691c3b232e65d73b0a0c2fc5c72c870cf/modules/search-pipeline-common). If you have doubts, just create an issue in OpenSearch Core and, if you have one, a new PR. Maintainers will help guide you.
+
 
 # History
 This repository has also been used for discussion and ideas around search relevance. These discussions still exist here, however due to the relatively new standard of having one repo per plugin in OpenSearch and our implementations beginning to make it into the OpenSearch build, we have two repositories now. This repository will develop into a plugin that will allow OpenSearch users to rewrite search queries, rerank results, and log data about those actions. The other repository, [dashboards-search-relevance](https://www.github.com/opensearch-projects/dashboards-search-relevance), is where we will build front-end tooling to help relevance engineers and business users tune results. 
-
 
 ## Project Resources
 
 * [OpenSearch Project Website](https://opensearch.org/)
 * [Downloads](https://opensearch.org/downloads.html)
 * [Project Principles](https://opensearch.org/#principles)
+* [Search Pipelines](https://opensearch.org/docs/latest/search-plugins/search-pipelines/index/)
 * [Contributing to OpenSearch Search Request Processor](CONTRIBUTING.md)
 * [Search Relevance](RELEVANCE.md)
 * [Maintainer Responsibilities](MAINTAINERS.md)
