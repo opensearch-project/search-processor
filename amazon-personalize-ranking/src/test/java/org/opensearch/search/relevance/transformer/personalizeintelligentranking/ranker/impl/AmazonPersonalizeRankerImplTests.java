@@ -8,6 +8,8 @@
 
 package org.opensearch.search.relevance.transformer.personalizeintelligentranking.ranker.impl;
 
+import com.amazonaws.AmazonServiceException;
+import org.junit.Assert;
 import org.mockito.Mockito;
 import org.opensearch.OpenSearchParseException;
 import org.opensearch.search.SearchHit;
@@ -302,5 +304,40 @@ public class AmazonPersonalizeRankerImplTests extends OpenSearchTestCase {
 
         assertNotEquals(rerankedDocumentIdsWhenWeightIsOne, rerankedDocumentIds);
         assertNotEquals(rerankedDocumentIdsWhenWeightIsZero, rerankedDocumentIds);
+    }
+
+    public void testReRankWithaccessDeniedExceptionWithStatusCode400() throws IOException {
+
+        PersonalizeIntelligentRankerConfiguration rankerConfig =
+                new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdField, region, weight);
+        PersonalizeClient client = Mockito.mock(PersonalizeClient.class);
+        Mockito.when(client.getPersonalizedRanking(any())).thenThrow(buildErrorWithStatusCode(400));
+
+        PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters();
+        requestParameters.setUserId("28");
+        SearchHits responseHits = SearchTestUtil.getSampleSearchHitsForPersonalize(numOfHits);
+        AmazonPersonalizedRankerImpl ranker = new AmazonPersonalizedRankerImpl(rankerConfig, client);
+        Assert.assertThrows(IllegalArgumentException.class, () -> ranker.rerank(responseHits, requestParameters));
+    }
+
+    public void testReRankWithaccessDeniedExceptionWithStatusCode500() throws IOException {
+
+        PersonalizeIntelligentRankerConfiguration rankerConfig =
+                new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, recipe, itemIdField, region, weight);
+        PersonalizeClient client = Mockito.mock(PersonalizeClient.class);
+        Mockito.when(client.getPersonalizedRanking(any())).thenThrow(buildErrorWithStatusCode(500));
+
+        PersonalizeRequestParameters requestParameters = new PersonalizeRequestParameters();
+        requestParameters.setUserId("28");
+        SearchHits responseHits = SearchTestUtil.getSampleSearchHitsForPersonalize(numOfHits);
+        AmazonPersonalizedRankerImpl ranker = new AmazonPersonalizedRankerImpl(rankerConfig, client);
+        Assert.assertThrows(AmazonServiceException.class, () -> ranker.rerank(responseHits, requestParameters));
+    }
+
+
+    private AmazonServiceException buildErrorWithStatusCode(int statusCode) {
+        AmazonServiceException amazonServiceException = new AmazonServiceException("Error");
+        amazonServiceException.setStatusCode(statusCode);
+        return amazonServiceException;
     }
 }
