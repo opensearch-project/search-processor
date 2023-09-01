@@ -69,6 +69,7 @@ dependencies {
     implementation 'commons-logging:commons-logging:1.2'
     implementation 'com.amazonaws:aws-java-sdk-sts:1.12.300'
     implementation 'com.amazonaws:aws-java-sdk-core:1.12.300'
+    implementation 'commons-logging:commons-logging:1.2'
 }
 
 
