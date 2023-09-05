@@ -30,13 +30,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
-import java.io.IOException;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
-import org.apache.commons.lang3.StringUtils;
+import org.opensearch.core.common.Strings;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreRequest;
 import org.opensearch.search.relevance.transformer.kendraintelligentranking.model.dto.RescoreResult;
 
@@ -132,11 +131,11 @@ public class KendraHttpClient implements Closeable {
   }
 
   public boolean isValid() {
-    return StringUtils.isNotEmpty(serviceEndpoint) && StringUtils.isNotEmpty(executionPlanId);
+    return !Strings.isNullOrEmpty(serviceEndpoint) && !Strings.isNullOrEmpty(executionPlanId);
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() {
     if (amazonHttpClient != null) {
       amazonHttpClient.shutdown();
     }
