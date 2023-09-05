@@ -7,6 +7,7 @@
  */
 package org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker.impl;
 
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingRequest;
 import com.amazonaws.services.personalizeruntime.model.GetPersonalizedRankingResult;
 import com.amazonaws.services.personalizeruntime.model.PredictedItem;
@@ -20,6 +21,7 @@ import org.opensearch.search.relevance.transformer.personalizeintelligentranking
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.PersonalizeIntelligentRankerConfiguration;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.requestparameter.PersonalizeRequestParameters;
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker.PersonalizedRanker;
+import org.opensearch.search.relevance.transformer.personalizeintelligentranking.utils.ValidationUtil;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +38,7 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
     private static final Logger logger = LogManager.getLogger(AmazonPersonalizedRankerImpl.class);
     private final PersonalizeIntelligentRankerConfiguration rankerConfig;
     private final PersonalizeClient personalizeClient;
+
     public AmazonPersonalizedRankerImpl(PersonalizeIntelligentRankerConfiguration config,
                                         PersonalizeClient client) {
         this.rankerConfig = config;
@@ -96,7 +99,15 @@ public class AmazonPersonalizedRankerImpl implements PersonalizedRanker {
 
             SearchHits personalizedHits = combineScores(hits, result);
             return personalizedHits;
-        } catch (Exception ex) {
+        } catch (AmazonServiceException e) {
+            logger.error("Exception while calling personalize campaign: {}", e.getMessage());
+            int statusCode = e.getStatusCode();
+            if (ValidationUtil.is4xxError(statusCode)) {
+                throw new IllegalArgumentException(e);
+            }
+            throw e;
+        }
+        catch (Exception ex) {
             logger.error("Failed to re rank with Personalize.", ex);
             throw ex;
         }
