@@ -31,15 +31,6 @@ loggerUsageCheck.enabled = false
 validateNebulaPom.enabled = false
 
 buildscript {
-    ext {
-        isSnapshot = "true" == System.getProperty("build.snapshot", "true")
-        opensearch_version = System.getProperty("opensearch.version", "2.10.0")
-        plugin_version = opensearch_version
-        if (isSnapshot) {
-            opensearch_version += "-SNAPSHOT"
-        }
-    }
-
     repositories {
         mavenLocal()
         maven { url "https://aws.oss.sonatype.org/content/repositories/snapshots" }
