@@ -359,6 +359,13 @@ if [ -n "${VOLUME_NAME:-}" ]; then
     external: true"
 fi
 
+# OpenSearch 2.12 onwards security plugins requires a password to be set to setup admin user
+if [ "$(echo "${OPENSEARCH_VERSION} 2.12" | awk '{print ($1 >= $2)}')" -eq 1 ] && [ -z "${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" ]; then
+  echo "OpenSearch 2.12 onwards, the Security Plugins requires initial admin password to be set for demo config setup"
+  exit 1
+fi
+
+
 # 
 # Create a docker-compose.yml file that will launch an OpenSearch node with the image we
 # just built and an OpenSearch Dashboards node that points to the OpenSearch node.
@@ -379,6 +386,7 @@ services:
       - kendra_intelligent_ranking.service.endpoint=${KENDRA_RANKING_ENDPOINT}
       - kendra_intelligent_ranking.service.region=${AWS_REGION}
       - kendra_intelligent_ranking.service.execution_plan_id=${EXECUTION_PLAN_ID}
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
     ulimits:
       memlock:
         soft: -1
@@ -446,8 +454,8 @@ cat >README <<EOF
 OpenSearch container launched, listening on port 9200.
 OpenSearch Dashboards container launched, listening on port 5601.
 
-Interact with OpenSearch using curl by authenticating as admin:admin like:
-  curl -ku "admin:admin" https://localhost:9200/
+Interact with OpenSearch using curl by authenticating as admin like:
+  curl -ku "admin:<admin-password>" https://localhost:9200/
 
 Index some data on OpenSearch by following instructions at 
 https://opensearch.org/docs/latest/opensearch/index-data/
