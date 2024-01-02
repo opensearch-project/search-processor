@@ -359,10 +359,16 @@ if [ -n "${VOLUME_NAME:-}" ]; then
     external: true"
 fi
 
-# OpenSearch 2.12 onwards security plugins requires a password to be set to setup admin user
-if [ "$(echo "${OPENSEARCH_VERSION} 2.12" | awk '{print ($1 >= $2)}')" -eq 1 ] && [ -z "${OPENSEARCH_INITIAL_ADMIN_PASSWORD}" ]; then
-  echo "OpenSearch 2.12 onwards, the Security Plugins requires initial admin password to be set for demo config setup"
-  exit 1
+# Starting in 2.12.0, security demo configuration script requires an initial admin password
+IFS='.' read -ra version_array <<< "$VERSION"
+
+if [ -z "$CREDENTIAL" ]
+then
+  if (( ${version_array[0]} > 2 || (${version_array[0]} == 2 && ${version_array[1]} >= 12) )); then
+      CREDENTIAL="admin:myStrongPassword123!"
+  else
+      CREDENTIAL="admin:admin"
+  fi
 fi
 
 
