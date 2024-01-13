@@ -360,15 +360,12 @@ if [ -n "${VOLUME_NAME:-}" ]; then
 fi
 
 # Starting in 2.12.0, security demo configuration script requires an initial admin password
-IFS='.' read -ra version_array <<< "$VERSION"
-
-if [ -z "$CREDENTIAL" ]
-then
-  if (( ${version_array[0]} > 2 || (${version_array[0]} == 2 && ${version_array[1]} >= 12) )); then
-      CREDENTIAL="admin:myStrongPassword123!"
-  else
-      CREDENTIAL="admin:admin"
-  fi
+OPENSEARCH_REQUIRED_VERSION="2.12.0"
+COMPARE_VERSION=`echo $OPENSEARCH_REQUIRED_VERSION $OPENSEARCH_VERSION | tr ' ' '\n' | sort -V | uniq | head -n 1`
+if [ "$COMPARE_VERSION" != "$OPENSEARCH_REQUIRED_VERSION" ]; then
+  OPENSEARCH_INITIAL_ADMIN_PASSWORD="admin"
+else
+  OPENSEARCH_INITIAL_ADMIN_PASSWORD="myStrongPassword123!"
 fi
 
 
