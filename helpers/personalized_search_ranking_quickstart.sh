@@ -26,7 +26,7 @@ fi
 function print_help() {
   cat << EOF
 Usage: $0 [-r <region>] [--profile <AWS profile name>]
-        [--volume-name <docker_volume_name>]
+        [--volume-name <docker_volume_name>] [--admin-password <admin_password>]
   -r | --region                     The AWS region for the Personalize Intelligent Ranking
                                     service endpoint. If not specified, will read from the
                                     AWS CLI for the default profile.
@@ -39,6 +39,11 @@ Usage: $0 [-r <region>] [--profile <AWS profile name>]
                                     named Docker volume to \$OPENSEARCH_ROOT/data, so index data
                                     will persist across executions. If the named volume does not
                                     exist, it will be created.
+  --admin-password                  For OpenSearch 2.12 and higher, we no longer use a default
+                                    password of "admin" for the admin user. Instead, the value
+                                    passed to this parameter will be used as the admin password.
+                                    For OpenSearch versions prior to 2.12, this argument will be
+                                    ignored with a warning.
 
   NOTE: If the --profile option is not specified, the script will attempt to read AWS
   credentials (access/secret key, optional session token) from environment variables,
@@ -76,8 +81,26 @@ while [ "$#" -gt 0 ]; do
         VOLUME_NAME=$1
         shift
         ;;
-        esac
+      --admin-password )
+	shift
+	OPENSEARCH_INITIAL_ADMIN_PASSWORD="$1"
+	shift
+	;;
+    esac
 done
+
+# Starting in 2.12.0, security demo configuration script requires an initial admin password
+OPENSEARCH_REQUIRED_VERSION="2.12.0"
+COMPARE_VERSION=`echo $OPENSEARCH_REQUIRED_VERSION $OPENSEARCH_VERSION | tr ' ' '\n' | sort -V | uniq | head -n 1`
+if [ "$COMPARE_VERSION" != "$OPENSEARCH_REQUIRED_VERSION" ]; then
+  if [ -n "${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-}" ]; then
+    echo "WARNING: The --admin-password setting has no effect on OpenSearch ${OPENSEARCH_VERSION}. The admin password will be 'admin'."
+  fi
+  OPENSEARCH_INITIAL_ADMIN_PASSWORD="admin"
+elif [ -z "${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-}" ]; then
+  echo "Starting with OpenSearch 2.12, you must specify the admin password with the --admin-password parameter."
+  exit 1
+fi
 
 #
 # Determine which credentials and region to use. By the end of this block, all specified
@@ -253,14 +276,7 @@ if [ -n "${VOLUME_NAME:-}" ]; then
 fi
 echo "Volume created"
 
-# Starting in 2.12.0, security demo configuration script requires an initial admin password
-OPENSEARCH_REQUIRED_VERSION="2.12.0"
-COMPARE_VERSION=`echo $OPENSEARCH_REQUIRED_VERSION $OPENSEARCH_VERSION | tr ' ' '\n' | sort -V | uniq | head -n 1`
-if [ "$COMPARE_VERSION" != "$OPENSEARCH_REQUIRED_VERSION" ]; then
-  OPENSEARCH_INITIAL_ADMIN_PASSWORD="admin"
-else
-  OPENSEARCH_INITIAL_ADMIN_PASSWORD="myStrongPassword123!"
-fi
+
 
 #
 # Create a docker-compose.yml file that will launch an OpenSearch node with the image we
