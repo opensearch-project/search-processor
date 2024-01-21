@@ -1,2 +1,29 @@
 # This should match the MAINTAINERS.md file in the root of this repo
+# Unknown owner on line 2: make sure @msfroh exists and has write access to the repository
+#*   @msfroh @macohen @noCharger @mingshl @sejli
+#Unknown owner on line 2: make sure @macohen exists and has write access to the repository
+#*   @msfroh @macohen @noCharger @mingshl @sejli
+#Unknown owner on line 2: make sure @noCharger exists and has write access to the repository
+#*   @msfroh @macohen @noCharger @mingshl @sejli
+#Unknown owner on line 2: make sure @mingshl exists and has write access to the repository
+#…  @msfroh @macohen @noCharger @mingshl @sejli
+#Unknown owner on line 2: make sure @sejli exists and has write access to the repository
+#… @macohen @noCharger @mingshl @sejli
+#Latest commit
+#macohen
+#macohen
+#adding Sean Li - sejli as a maintainer (opensearch-project#128)
+#6ac27fc
+# · 
+#9 months ago
+#History
+#File metadata and controls
+#
+#Code
+#
+#Blame
+#2 lines (2 loc) · 116 Bytes
+# This should match the MAINTAINERS.md file in the root of this repo
+*   @msfroh @macohen @noCharger @mingshl @sejli
+
 *   @msfroh @macohen @noCharger @mingshl @sejli
