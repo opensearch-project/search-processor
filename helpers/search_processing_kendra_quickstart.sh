@@ -27,7 +27,7 @@ function print_help() {
   cat << EOF
 Usage: $0 [-p <execution_plan_id>] [-r <region>] [-e <kendra_ranking_endpoint>]
         [--profile <AWS profile name>] [--create-execution-plan]
-        [--volume-name <docker_volume_name>]
+        [--volume-name <docker_volume_name>] [--admin-password <admin_password>]
   -p | --execution-plan-id          The ID returned from Kendra Intelligent Ranking service
                                     from the call to CreateRescoreExecutionPlan. Required if
                                     --create-execution-plan is not set.
@@ -50,6 +50,11 @@ Usage: $0 [-p <execution_plan_id>] [-r <region>] [-e <kendra_ranking_endpoint>]
                                     named Docker volume to \$OPENSEARCH_ROOT/data, so index data
                                     will persist across executions. If the named volume does not
                                     exist, it will be created.
+  --admin-password                  For OpenSearch 2.12 and higher, we no longer use a default
+                                    password of "admin" for the admin user. Instead, the value
+                                    passed to this parameter will be used as the admin password.
+                                    For OpenSearch versions prior to 2.12, this argument will be
+                                    ignored with a warning.
 
   NOTE: If the --profile option is not specified, the script will attempt to read AWS 
   credentials (access/secret key, optional session token) from environment variables, 
@@ -101,6 +106,11 @@ while [ "$#" -gt 0 ]; do
 	    VOLUME_NAME=$1
 	    shift
             ;;
+        --admin-password )
+            shift
+            OPENSEARCH_INITIAL_ADMIN_PASSWORD="$1"
+            shift
+            ;;
     esac
 done
 
@@ -118,6 +128,19 @@ fi
 if [ "${FAILED_VALIDATION}" == "1" ]; then
   echo
   print_help
+  exit 1
+fi
+
+# Starting in 2.12.0, security demo configuration script requires an initial admin password
+OPENSEARCH_REQUIRED_VERSION="2.12.0"
+COMPARE_VERSION=`echo $OPENSEARCH_REQUIRED_VERSION $OPENSEARCH_VERSION | tr ' ' '\n' | sort -V | uniq | head -n 1`
+if [ "$COMPARE_VERSION" != "$OPENSEARCH_REQUIRED_VERSION" ]; then
+  if [ -n "${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-}" ]; then
+    echo "WARNING: The --admin-password setting has no effect on OpenSearch ${OPENSEARCH_VERSION}. The admin password will be 'admin'."
+  fi
+  OPENSEARCH_INITIAL_ADMIN_PASSWORD="admin"
+elif [ -z "${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-}" ]; then
+  echo "Starting with OpenSearch 2.12, you must specify the admin password with the --admin-password parameter."
   exit 1
 fi
 
@@ -379,6 +402,7 @@ services:
       - kendra_intelligent_ranking.service.endpoint=${KENDRA_RANKING_ENDPOINT}
       - kendra_intelligent_ranking.service.region=${AWS_REGION}
       - kendra_intelligent_ranking.service.execution_plan_id=${EXECUTION_PLAN_ID}
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
     ulimits:
       memlock:
         soft: -1
@@ -446,8 +470,8 @@ cat >README <<EOF
 OpenSearch container launched, listening on port 9200.
 OpenSearch Dashboards container launched, listening on port 5601.
 
-Interact with OpenSearch using curl by authenticating as admin:admin like:
-  curl -ku "admin:admin" https://localhost:9200/
+Interact with OpenSearch using curl by authenticating as admin like:
+  curl -ku "admin:<admin-password>" https://localhost:9200/
 
 Index some data on OpenSearch by following instructions at 
 https://opensearch.org/docs/latest/opensearch/index-data/

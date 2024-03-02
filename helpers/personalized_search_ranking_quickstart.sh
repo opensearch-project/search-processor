@@ -26,7 +26,7 @@ fi
 function print_help() {
   cat << EOF
 Usage: $0 [-r <region>] [--profile <AWS profile name>]
-        [--volume-name <docker_volume_name>]
+        [--volume-name <docker_volume_name>] [--admin-password <admin_password>]
   -r | --region                     The AWS region for the Personalize Intelligent Ranking
                                     service endpoint. If not specified, will read from the
                                     AWS CLI for the default profile.
@@ -39,6 +39,11 @@ Usage: $0 [-r <region>] [--profile <AWS profile name>]
                                     named Docker volume to \$OPENSEARCH_ROOT/data, so index data
                                     will persist across executions. If the named volume does not
                                     exist, it will be created.
+  --admin-password                  For OpenSearch 2.12 and higher, we no longer use a default
+                                    password of "admin" for the admin user. Instead, the value
+                                    passed to this parameter will be used as the admin password.
+                                    For OpenSearch versions prior to 2.12, this argument will be
+                                    ignored with a warning.
 
   NOTE: If the --profile option is not specified, the script will attempt to read AWS
   credentials (access/secret key, optional session token) from environment variables,
@@ -76,8 +81,26 @@ while [ "$#" -gt 0 ]; do
         VOLUME_NAME=$1
         shift
         ;;
-        esac
+      --admin-password )
+	shift
+	OPENSEARCH_INITIAL_ADMIN_PASSWORD="$1"
+	shift
+	;;
+    esac
 done
+
+# Starting in 2.12.0, security demo configuration script requires an initial admin password
+OPENSEARCH_REQUIRED_VERSION="2.12.0"
+COMPARE_VERSION=`echo $OPENSEARCH_REQUIRED_VERSION $OPENSEARCH_VERSION | tr ' ' '\n' | sort -V | uniq | head -n 1`
+if [ "$COMPARE_VERSION" != "$OPENSEARCH_REQUIRED_VERSION" ]; then
+  if [ -n "${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-}" ]; then
+    echo "WARNING: The --admin-password setting has no effect on OpenSearch ${OPENSEARCH_VERSION}. The admin password will be 'admin'."
+  fi
+  OPENSEARCH_INITIAL_ADMIN_PASSWORD="admin"
+elif [ -z "${OPENSEARCH_INITIAL_ADMIN_PASSWORD:-}" ]; then
+  echo "Starting with OpenSearch 2.12, you must specify the admin password with the --admin-password parameter."
+  exit 1
+fi
 
 #
 # Determine which credentials and region to use. By the end of this block, all specified
@@ -252,6 +275,9 @@ if [ -n "${VOLUME_NAME:-}" ]; then
     external: true"
 fi
 echo "Volume created"
+
+
+
 #
 # Create a docker-compose.yml file that will launch an OpenSearch node with the image we
 # just built and an OpenSearch Dashboards node that points to the OpenSearch node.
@@ -269,6 +295,7 @@ services:
       - cluster.name=opensearch-cluster
       - node.name=opensearch-node
       - discovery.type=single-node
+      - OPENSEARCH_INITIAL_ADMIN_PASSWORD=${OPENSEARCH_INITIAL_ADMIN_PASSWORD}
     ulimits:
       memlock:
         soft: -1
@@ -329,8 +356,8 @@ cat >README <<EOF
 OpenSearch container launched, listening on port 9200.
 OpenSearch Dashboards container launched, listening on port 5601.
 
-Interact with OpenSearch using curl by authenticating as admin:admin like:
-  curl -ku "admin:admin" https://localhost:9200/
+Interact with OpenSearch using curl by authenticating as admin like:
+  curl -ku "admin:<admin-password>" https://localhost:9200/
 
 Index some data on OpenSearch by following instructions at
 https://opensearch.org/docs/latest/opensearch/index-data/
@@ -343,7 +370,7 @@ search ranking and one with Personalized search Ranking.
 
 To configure and setup Personalize search ranking, run a curl command as follows:
 
-curl -X PUT "https://localhost:9200/_search/pipeline/intelligent_ranking" -u 'admin:admin' --insecure -H 'Content-Type: application/json' -d'
+curl -X PUT "https://localhost:9200/_search/pipeline/intelligent_ranking" -u 'admin:<admin-password>' --insecure -H 'Content-Type: application/json' -d'
 {
   "description": "A pipeline to apply custom reranking",
   "response_processors" : [
