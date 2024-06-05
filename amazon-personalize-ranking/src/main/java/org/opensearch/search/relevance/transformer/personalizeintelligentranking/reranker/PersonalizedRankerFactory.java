@@ -14,6 +14,7 @@ import org.opensearch.search.relevance.transformer.personalizeintelligentranking
 import org.opensearch.search.relevance.transformer.personalizeintelligentranking.reranker.impl.AmazonPersonalizedRankerImpl;
 
 import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.AMAZON_PERSONALIZED_RANKING_RECIPE_NAME;
+import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.AMAZON_PERSONALIZED_RANKING_V2_RECIPE_NAME;
 
 /**
  * Factory for creating Personalize ranker instance based on Personalize ranker configuration
@@ -29,7 +30,9 @@ public class PersonalizedRankerFactory {
      */
     public PersonalizedRanker getPersonalizedRanker(PersonalizeIntelligentRankerConfiguration config, PersonalizeClient client){
         PersonalizedRanker ranker = null;
-        if (config.getRecipe().equals(AMAZON_PERSONALIZED_RANKING_RECIPE_NAME)) {
+        String recipeInConfig = config.getRecipe();
+        if (recipeInConfig.equals(AMAZON_PERSONALIZED_RANKING_RECIPE_NAME)
+                || recipeInConfig.equals(AMAZON_PERSONALIZED_RANKING_V2_RECIPE_NAME)) {
             ranker = new AmazonPersonalizedRankerImpl(config, client);
         } else {
             logger.error("Personalize recipe provided in configuration is not supported for re ranking search results");
