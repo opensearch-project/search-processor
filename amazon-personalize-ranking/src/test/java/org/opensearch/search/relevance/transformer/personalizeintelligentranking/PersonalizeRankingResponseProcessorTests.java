@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 import static org.mockito.Mockito.mock;
 import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.PersonalizeRankingResponseProcessor.TYPE;
 import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.AMAZON_PERSONALIZED_RANKING_RECIPE_NAME;
+import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.AMAZON_PERSONALIZED_RANKING_V2_RECIPE_NAME;
 
 public class PersonalizeRankingResponseProcessorTests extends OpenSearchTestCase {
 
@@ -280,6 +281,81 @@ public class PersonalizeRankingResponseProcessorTests extends OpenSearchTestCase
                 .collect(Collectors.toList());
 
         ArrayList<String> expectedRankedDocumentIds = PersonalizeRuntimeTestUtil.expectedRankedItemIdsForGivenWeight(NUM_HITS, 1);
+        assertEquals(expectedRankedDocumentIds, rerankedDocumentIds);
+        IdleConnectionReaper.shutdown();
+    }
+
+    public void testPersonalizeRankingV2Response() throws Exception {
+        PersonalizeClient personalizeClient = PersonalizeRuntimeTestUtil.buildMockPersonalizeClient();
+
+        PersonalizeRankingResponseProcessor.Factory factory
+                = new PersonalizeRankingResponseProcessor.Factory(this.clientSettings, (cp, r) -> personalizeClient);
+
+        String itemField = "ITEM_ID";
+        Map<String, Object> configuration = buildPersonalizeResponseProcessorConfig();
+        configuration.put("recipe", AMAZON_PERSONALIZED_RANKING_V2_RECIPE_NAME);
+
+        PersonalizeRankingResponseProcessor responseProcessor =
+                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", false, configuration, UPDATE_CONTEXT);
+
+        SearchResponse personalizedResponse = createPersonalizedRankingProcessorResponse(responseProcessor, null, NUM_HITS);
+
+        List<SearchHit> transformedHits = Arrays.asList(personalizedResponse.getHits().getHits());
+        List<String> rerankedDocumentIds;
+        rerankedDocumentIds = transformedHits.stream()
+                .filter(h -> h.getSourceAsMap().get(itemField) != null)
+                .map(h -> h.getSourceAsMap().get(itemField).toString())
+                .collect(Collectors.toList());
+
+        ArrayList<String> expectedRankedDocumentIds = PersonalizeRuntimeTestUtil.expectedRankedItemIdsForGivenWeight(NUM_HITS, 1);
+        assertEquals(expectedRankedDocumentIds, rerankedDocumentIds);
+        IdleConnectionReaper.shutdown();
+    }
+
+    public void testPersonalizeRankingV2ResponseWithInvalidItemIdFieldName() throws Exception {
+        PersonalizeClient personalizeClient = PersonalizeRuntimeTestUtil.buildMockPersonalizeClient();
+
+        PersonalizeRankingResponseProcessor.Factory factory
+                = new PersonalizeRankingResponseProcessor.Factory(this.clientSettings, (cp, r) -> personalizeClient);
+
+        String itemFieldInvalid = "ITEM_ID_NOT_VALID";
+        Map<String, Object> configuration = buildPersonalizeResponseProcessorConfig();
+        configuration.put("recipe", AMAZON_PERSONALIZED_RANKING_V2_RECIPE_NAME);
+        configuration.put("item_id_field", itemFieldInvalid);
+
+        PersonalizeRankingResponseProcessor responseProcessor =
+                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", false, configuration, UPDATE_CONTEXT);
+
+        expectThrows(OpenSearchParseException.class, () ->
+                createPersonalizedRankingProcessorResponse(responseProcessor, null, NUM_HITS));
+        IdleConnectionReaper.shutdown();
+    }
+
+    public void testPersonalizeRankingV2ResponseWithDefaultItemIdField() throws Exception {
+        PersonalizeClient personalizeClient = PersonalizeRuntimeTestUtil.buildMockPersonalizeClient();
+
+        PersonalizeRankingResponseProcessor.Factory factory
+                = new PersonalizeRankingResponseProcessor.Factory(this.clientSettings, (cp, r) -> personalizeClient);
+
+        String itemIdFieldEmpty = "";
+        Map<String, Object> configuration = buildPersonalizeResponseProcessorConfig();
+        configuration.put("item_id_field", itemIdFieldEmpty);
+        configuration.put("recipe", AMAZON_PERSONALIZED_RANKING_V2_RECIPE_NAME);
+
+        PersonalizeRankingResponseProcessor responseProcessor =
+                factory.create(Collections.emptyMap(), "testTag", "testingAllFields", false, configuration, UPDATE_CONTEXT);
+
+        SearchResponse personalizedResponse = createPersonalizedRankingProcessorResponse(responseProcessor, null, NUM_HITS);
+
+        List<SearchHit> transformedHits = Arrays.asList(personalizedResponse.getHits().getHits());
+        List<String> rerankedDocumentIds;
+        rerankedDocumentIds = transformedHits.stream()
+                .map(SearchHit::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        ArrayList<String> expectedRankedDocumentIds = PersonalizeRuntimeTestUtil.expectedRankedItemIdsForGivenWeight(NUM_HITS, 1);
+
         assertEquals(expectedRankedDocumentIds, rerankedDocumentIds);
         IdleConnectionReaper.shutdown();
     }
