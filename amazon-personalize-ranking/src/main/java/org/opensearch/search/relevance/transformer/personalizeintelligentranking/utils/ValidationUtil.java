@@ -15,9 +15,13 @@ import java.util.Set;
 import java.util.HashSet;
 
 import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.AMAZON_PERSONALIZED_RANKING_RECIPE_NAME;
+import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.AMAZON_PERSONALIZED_RANKING_V2_RECIPE_NAME;
 
 public class ValidationUtil {
-    private static Set<String> SUPPORTED_PERSONALIZE_RECIPES = new HashSet<>(Arrays.asList(AMAZON_PERSONALIZED_RANKING_RECIPE_NAME));
+    private static Set<String> SUPPORTED_PERSONALIZE_RECIPES = new HashSet<>(Arrays.asList(
+            AMAZON_PERSONALIZED_RANKING_RECIPE_NAME,
+            AMAZON_PERSONALIZED_RANKING_V2_RECIPE_NAME
+    ));
 
     /**
      * Validate Personalize configuration for calling Personalize service.

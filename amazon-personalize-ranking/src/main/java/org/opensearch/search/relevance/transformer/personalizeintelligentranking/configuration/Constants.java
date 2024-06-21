@@ -13,4 +13,5 @@ package org.opensearch.search.relevance.transformer.personalizeintelligentrankin
  */
 public class Constants {
     public static final String AMAZON_PERSONALIZED_RANKING_RECIPE_NAME = "aws-personalized-ranking";
+    public static final String AMAZON_PERSONALIZED_RANKING_V2_RECIPE_NAME = "aws-personalized-ranking-v2";
 }

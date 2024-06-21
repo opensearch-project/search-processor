@@ -13,6 +13,7 @@ import org.opensearch.search.relevance.transformer.personalizeintelligentranking
 import org.opensearch.test.OpenSearchTestCase;
 
 import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.AMAZON_PERSONALIZED_RANKING_RECIPE_NAME;
+import static org.opensearch.search.relevance.transformer.personalizeintelligentranking.configuration.Constants.AMAZON_PERSONALIZED_RANKING_V2_RECIPE_NAME;
 
 public class ValidationUtilTests extends OpenSearchTestCase {
 
@@ -27,6 +28,12 @@ public class ValidationUtilTests extends OpenSearchTestCase {
     public void testValidRankerConfig () {
         PersonalizeIntelligentRankerConfiguration rankerConfig =
                 new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, AMAZON_PERSONALIZED_RANKING_RECIPE_NAME, itemIdField, region, weight);
+        ValidationUtil.validatePersonalizeIntelligentRankerConfiguration(rankerConfig, TYPE, TAG);
+    }
+
+    public void testValidRankerConfigPersonalizedRankingV2 () {
+        PersonalizeIntelligentRankerConfiguration rankerConfig =
+                new PersonalizeIntelligentRankerConfiguration(personalizeCampaign, iamRoleArn, AMAZON_PERSONALIZED_RANKING_V2_RECIPE_NAME, itemIdField, region, weight);
         ValidationUtil.validatePersonalizeIntelligentRankerConfiguration(rankerConfig, TYPE, TAG);
     }
 
