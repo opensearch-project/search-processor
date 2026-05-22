@@ -11,14 +11,14 @@ jobs:
     steps:
       - name: GitHub App token
         id: github_app_token
-        uses: tibdex/github-app-token@v1.5.0
+        uses: tibdex/github-app-token@1901dc7d52169e70c27a8da37aef0d423e2867a2 # v1.5.0
         with:
           app_id: ${{ secrets.APP_ID }}
           private_key: ${{ secrets.APP_PRIVATE_KEY }}
           installation_id: 22958780
 
       - name: Check out code
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
         with:
           token: ${{ steps.github_app_token.outputs.token }}
 
@@ -27,7 +27,7 @@ jobs:
           ./gradlew updateSHAs
 
       - name: Commit the changes
-        uses: stefanzweifel/git-auto-commit-action@v4.7.2
+        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a # v4.7.2
         with:
           commit_message: Updating SHAs
           branch: ${{ github.head_ref }}
@@ -36,7 +36,7 @@ jobs:
           commit_options: '--signoff'
 
       - name: Commit the changes
-        uses: stefanzweifel/git-auto-commit-action@v4.7.2
+        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a # v4.7.2
         with:
           commit_message: Spotless formatting
           branch: ${{ github.head_ref }}
@@ -45,12 +45,12 @@ jobs:
           commit_options: '--signoff'
 
       - name: Update the changelog
-        uses: dangoslen/dependabot-changelog-helper@v1
+        uses: dangoslen/dependabot-changelog-helper@780f7c82213ff956b1bd8cb484ba67d1fbe8b4ba # v1
         with:
           version: 'Unreleased'
 
       - name: Commit the changes
-        uses: stefanzweifel/git-auto-commit-action@v4
+        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a # v4
         with:
           commit_message: "Update changelog"
           branch: ${{ github.head_ref }}

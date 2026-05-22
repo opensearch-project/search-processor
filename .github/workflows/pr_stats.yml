@@ -12,4 +12,4 @@ jobs:
       pull-requests: write
     steps:
       - name: Run pull request stats
-        uses: flowwer-dev/pull-request-stats@master
+        uses: flowwer-dev/pull-request-stats@0dde6edf8b7db75684533021212c6e85fb987dbb # master
